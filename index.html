@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"> 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#111827">
 <meta name="description" content="Snoozing Club ¿ — Gen V - SNZ® · Media, Creativity, Together.">
@@ -378,7 +378,7 @@ button:hover::before,
 
 /* === CINEMATIC LIQUID-GLASS LOADER V2 === */
 .sc-loader {
-  position: fixed; inset: 0; z-index: 99999; isolation: isolate;
+  position: fixed !important; inset: 0 !important; width: 100vw; height: 100vh; height: 100dvh; box-sizing: border-box; z-index: 2147483647 !important; isolation: isolate;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0; overflow: hidden; color: #edf5ff;
   background: radial-gradient(ellipse at 50% 43%, rgba(47,91,177,.25), transparent 31%),
@@ -386,7 +386,9 @@ button:hover::before,
               linear-gradient(145deg,#030711 0%,#071126 52%,#040916 100%);
   opacity: 1; visibility: visible; transition: opacity .9s cubic-bezier(.2,.7,.2,1), visibility .9s;
 }
-.sc-loader.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.sc-loader.is-hidden { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+html.sc-loader-active, html.sc-loader-active body { overflow: hidden !important; }
+@media (max-width: 480px) { .sc-loader { padding: 20px 14px; } }
 .sc-loader-stars { position: absolute; inset: 0; opacity: .65; pointer-events: none;
   background-image: radial-gradient(1px 1px at 7% 19%,#d7e8ff 98%,transparent),
   radial-gradient(2px 2px at 18% 76%,#9dc4ff 98%,transparent),
@@ -646,64 +648,55 @@ button:hover::before,
     const loader = document.getElementById('sc-loader');
     if (!loader || loader.dataset.initialized === 'true') return;
     loader.dataset.initialized = 'true';
+    document.documentElement.classList.add('sc-loader-active');
 
     const fill = document.getElementById('sc-loader-progress-fill');
     const percent = document.getElementById('sc-loader-percent');
     const message = document.getElementById('sc-loader-message');
-    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const stages = [
-      [0, 'Đang kết nối các vì sao'],
-      [24, 'Đang dựng không gian'],
-      [48, 'Đang khởi tạo giao diện'],
-      [73, 'Đang hoàn thiện chi tiết'],
-      [92, 'Sắp sẵn sàng']
-    ];
+    const reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const stages = [[0, 'Đang kết nối các vì sao'], [24, 'Đang dựng không gian'], [48, 'Đang khởi tạo giao diện'], [73, 'Đang hoàn thiện chi tiết'], [92, 'Sắp sẵn sàng']];
     const start = Date.now();
-    const minDuration = reduced ? 700 : 3200;
-    const maxDuration = 6500;
+    const minDuration = reduced ? 250 : 2200;
+    const maxDuration = 7000;
     let pageLoaded = document.readyState === 'complete';
     let done = false;
-
-    window.addEventListener('load', () => { pageLoaded = true; }, { once: true });
+    let timer = 0;
+    const onLoad = () => { pageLoaded = true; };
+    window.addEventListener('load', onLoad, { once: true });
 
     const hide = () => {
       if (done) return;
       done = true;
+      if (timer) window.clearTimeout(timer);
       if (fill) fill.style.width = '100%';
       if (percent) percent.textContent = '100%';
       if (message) message.textContent = 'Chào mừng đến Snoozing Club';
+      const fadeDelay = reduced ? 0 : 220;
       window.setTimeout(() => {
         loader.classList.add('is-hidden');
+        document.documentElement.classList.remove('sc-loader-active');
         window.setTimeout(() => {
           if (loader.isConnected) loader.remove();
-        }, 1000);
-      }, reduced ? 0 : 250);
+        }, reduced ? 20 : 1000);
+      }, fadeDelay);
     };
 
     const tick = () => {
       if (done || !loader.isConnected) return;
       const elapsed = Date.now() - start;
+      // Keep the indicator below 100% until the page is ready, avoiding a false completion.
       const progress = Math.min(94, (elapsed / minDuration) * 94);
       if (fill) fill.style.width = progress + '%';
       if (percent) percent.textContent = String(Math.floor(progress)).padStart(2, '0') + '%';
       const stage = [...stages].reverse().find(item => progress >= item[0]);
       if (message && stage) message.textContent = stage[1];
-
-      if ((pageLoaded && elapsed >= minDuration) || elapsed >= maxDuration) {
-        hide();
-        return;
-      }
-      window.setTimeout(tick, 60);
+      if ((pageLoaded && elapsed >= minDuration) || elapsed >= maxDuration) { hide(); return; }
+      timer = window.setTimeout(tick, 80);
     };
-
     tick();
   };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
-  } else {
-    boot();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
+  else boot();
 })();
 </script>
 </body>
