@@ -405,7 +405,7 @@ button:hover::before,
 .sc-loader-ring { position: absolute; inset: 12px; border: 1px solid rgba(160,201,255,.28); border-radius: 50%;
   box-shadow: 0 0 22px rgba(91,151,255,.06),inset 0 0 18px rgba(91,151,255,.04); }
 .sc-ring-a { transform: rotateX(68deg) rotateZ(0deg); animation: sc-ring-rotate 5s linear infinite; }
-.sc-ring-b { inset: 22px; transform: rotateY(66deg) rotateZ(30deg); border-color: rgba(188,220,255,.19); animation: sc-ring-rotate 7s linear infinite reverse; }
+.sc-ring-b { inset: 22px; transform: rotateY(66deg) rotateZ(30deg); border-color: rgba(188,220,255,.19); animation: sc-ring-rotate-y 7s linear infinite reverse; }
 .sc-ring-c { inset: 4px 31px; transform: rotate(35deg); border-color: rgba(110,166,255,.15); animation: sc-ring-pulse 3.5s ease-in-out infinite; }
 .sc-loader-glass { width: 78px; height: 78px; border-radius: 27px; display: grid; place-items: center; position: relative;
   border: 1px solid rgba(213,232,255,.52);
@@ -428,7 +428,8 @@ button:hover::before,
 .sc-loader-percent { margin-top:8px;color:rgba(186,211,249,.6);font:10px/1.4 ui-monospace,monospace;letter-spacing:.15em; }
 .sc-loader-footer { position:absolute;bottom:28px;color:rgba(167,193,231,.38);font:9px/1.5 system-ui,sans-serif;letter-spacing:.18em; }
 .sc-loader-footer span { padding:0 8px;color:rgba(143,184,255,.65); }
-@keyframes sc-ring-rotate { to { rotate: 360deg; } }
+@keyframes sc-ring-rotate-y { from { transform: rotateY(66deg) rotateZ(0deg); } to { transform: rotateY(66deg) rotateZ(360deg); } }
+@keyframes sc-ring-rotate { from { transform: rotateX(68deg) rotateZ(0deg); } to { transform: rotateX(68deg) rotateZ(360deg); } }
 @keyframes sc-ring-pulse { 0%,100%{opacity:.35;scale:.94}50%{opacity:.8;scale:1.04} }
 @keyframes sc-glass-float { 0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-7px) rotate(3deg)} }
 @keyframes sc-dot-pulse { 0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)} }
@@ -458,13 +459,6 @@ button:hover::before,
   <div class="sc-loader-percent" id="sc-loader-percent">00%</div>
   <div class="sc-loader-footer">GEN V — SNZ® <span>•</span> MAKE BY RADIUS</div>
 </div>
-<div class="sc-loader-orbit sc-orbit-two"></div>
-  <div class="sc-loader-core"><span>SC</span></div>
-  <div class="sc-loader-name">SNOOZING CLUB <span>¿</span></div>
-  <div class="sc-loader-caption">ĐANG KHỞI TẠO KHÔNG GIAN</div>
-  <div class="sc-loader-track"><span></span></div>
-</div>
-
 <canvas id="star-canvas" aria-hidden="true"></canvas>
 <div class="aurora-layer" aria-hidden="true">
  <i class="aurora-ribbon" style="--left:-8%;--top:16%;--tilt:-13deg;--speed:19s"></i>
@@ -644,53 +638,73 @@ button:hover::before,
 </script>
 
 
+
+
 <script>
 (() => {
-  const loader = document.getElementById('sc-loader');
-  if (!loader) return;
-  const fill = document.getElementById('sc-loader-progress-fill');
-  const percent = document.getElementById('sc-loader-percent');
-  const message = document.getElementById('sc-loader-message');
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const stages = [
-    { at: 0, text: 'Đang kết nối các vì sao' },
-    { at: 25, text: 'Đang dựng không gian' },
-    { at: 52, text: 'Đang khởi tạo giao diện' },
-    { at: 78, text: 'Đang hoàn thiện chi tiết' },
-    { at: 94, text: 'Sẵn sàng chào đón bạn' }
-  ];
-  const start = Date.now();
-  let loaded = false;
-  let finished = false;
-  const minDuration = reduceMotion ? 900 : 3900;
-  const maxDuration = 7000;
-  const tick = () => {
-    if (finished) return;
-    const elapsed = Date.now() - start;
-    const natural = Math.min(94, (elapsed / minDuration) * 94);
-    const value = loaded ? Math.min(100, Math.max(natural, 96 + Math.min(4, ((elapsed - minDuration) / 400) * 4))) : natural;
-    if (fill) fill.style.width = value + '%';
-    if (percent) percent.textContent = String(Math.floor(value)).padStart(2, '0') + '%';
-    const stage = [...stages].reverse().find(item => value >= item.at);
-    if (message && stage) message.textContent = stage.text;
-    if (loaded && elapsed >= minDuration || elapsed >= maxDuration) {
-      finished = true;
+  const boot = () => {
+    const loader = document.getElementById('sc-loader');
+    if (!loader || loader.dataset.initialized === 'true') return;
+    loader.dataset.initialized = 'true';
+
+    const fill = document.getElementById('sc-loader-progress-fill');
+    const percent = document.getElementById('sc-loader-percent');
+    const message = document.getElementById('sc-loader-message');
+    const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stages = [
+      [0, 'Đang kết nối các vì sao'],
+      [24, 'Đang dựng không gian'],
+      [48, 'Đang khởi tạo giao diện'],
+      [73, 'Đang hoàn thiện chi tiết'],
+      [92, 'Sắp sẵn sàng']
+    ];
+    const start = Date.now();
+    const minDuration = reduced ? 700 : 3200;
+    const maxDuration = 6500;
+    let pageLoaded = document.readyState === 'complete';
+    let done = false;
+
+    window.addEventListener('load', () => { pageLoaded = true; }, { once: true });
+
+    const hide = () => {
+      if (done) return;
+      done = true;
       if (fill) fill.style.width = '100%';
       if (percent) percent.textContent = '100%';
       if (message) message.textContent = 'Chào mừng đến Snoozing Club';
       window.setTimeout(() => {
         loader.classList.add('is-hidden');
-        window.setTimeout(() => loader.remove(), 950);
-      }, 260);
-      return;
-    }
-    window.setTimeout(tick, 55);
+        window.setTimeout(() => {
+          if (loader.isConnected) loader.remove();
+        }, 1000);
+      }, reduced ? 0 : 250);
+    };
+
+    const tick = () => {
+      if (done || !loader.isConnected) return;
+      const elapsed = Date.now() - start;
+      const progress = Math.min(94, (elapsed / minDuration) * 94);
+      if (fill) fill.style.width = progress + '%';
+      if (percent) percent.textContent = String(Math.floor(progress)).padStart(2, '0') + '%';
+      const stage = [...stages].reverse().find(item => progress >= item[0]);
+      if (message && stage) message.textContent = stage[1];
+
+      if ((pageLoaded && elapsed >= minDuration) || elapsed >= maxDuration) {
+        hide();
+        return;
+      }
+      window.setTimeout(tick, 60);
+    };
+
+    tick();
   };
-  if (document.readyState === 'complete') loaded = true;
-  else window.addEventListener('load', () => { loaded = true; }, { once: true });
-  tick();
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
 })();
 </script>
-
 </body>
-</html>s
+</html>
