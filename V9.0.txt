@@ -1,0 +1,4321 @@
+-- Wings of Glory v8.7
+-- Features: master toggles (default OFF), i18n VN/EN, color wheel, config manager, notif on toggle
+
+local CoreGui           = game:GetService("CoreGui")
+local Players           = game:GetService("Players")
+local UserInputService  = game:GetService("UserInputService")
+local Workspace         = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService        = game:GetService("RunService")
+local TweenService      = game:GetService("TweenService")
+local Lighting          = game:GetService("Lighting")
+local HttpService       = game:GetService("HttpService")
+
+local LP = Players.LocalPlayer
+
+-- ============================ i18n ============================
+local LANG = "EN"
+local STR = {
+    EN = {
+        combat = "Combat", visual = "Visual", interface = "Interface",
+        config = "Config", system = "System",
+        silentAim = "Silent Aim", prediction = "Prediction", ballistic = "Ballistic Comp",
+        teamCheck = "Team Check", drawFov = "Draw FOV Circle", targetSel = "Target Selection",
+        fovRadius = "FOV Radius", maxDist = "Max Distance", targetHold = "Target Hold",
+        tracers = "Bullet Tracers", enableTracers = "Enable Tracers", style = "Style",
+        colorA = "Tracer Color A", colorB = "Tracer Color B", target = "Target",
+        lifetime = "Lifetime", thickness = "Thickness", maxTracers = "Max Tracers",
+        jitter = "Lightning Jitter", rbSpeed = "Rainbow Speed",
+        afterglow = "Afterglow", tipSpark = "Tip Spark",
+        hitbox = "Hitbox", hitboxExp = "Hitbox Expander", smartHitbox = "Smart Hitbox",
+        hitboxDebug = "Debug Visualizer", fuselageMul = "Fuselage Multiplier",
+        wingMul = "Wing Multiplier", healthHigh = "Health High",
+        healthMid = "Health Mid", healthLow = "Health Low",
+        esp = "ESP", masterEsp = "Master ESP", box = "Box", corners = "Corner Brackets",
+        name = "Name", nameUpper = "Name Uppercase", distance = "Distance",
+        healthBar = "Health Bar", healthHoriz = "Health Horizontal", healthPulse = "Health Pulse",
+        skeleton = "Skeleton", skeletonStyle = "Skeleton Style",
+        offscreen = "Off-Screen Arrows", bigArrows = "Big Arrows",
+        arrowGlow = "Arrow Glow", arrowDist = "Arrow Distance Text",
+        textOutline = "Text Outline", fovLimit = "FOV Limit", espColor = "ESP Color",
+        boxThickness = "Box Thickness", minDist = "Min Distance", maxDist2 = "Max Distance",
+        radar = "Radar", radarShape = "Shape", blips = "Blips", selfMarker = "Self Marker",
+        heading = "Heading", cardinals = "Cardinals", rangeText = "Range Text",
+        altOffset = "Altitude Offset", dirCones = "Direction Cones", blipPulse = "Blip Pulse",
+        blipColor = "Blip Color", radarBg = "Radar Background",
+        radarSize = "Size", radarRange = "Range", radarX = "X Offset", radarY = "Y Offset",
+        dogfight = "Dogfight Warning", dogfightEnable = "Enable Dogfight Warning",
+        showBanner = "Show Banner", showBorder = "Show Border Flash",
+        showArrows = "Show Directional Arrows", warnColor = "Warning Color",
+        detectionRange = "Detection Range", altTolerance = "Altitude Tolerance",
+        headingThresh = "Heading Threshold", ttiMax = "TTI Max", minSpeed = "Min Enemy Speed",
+        flashSpeed = "Flash Speed",
+        theme = "Theme", preset = "Preset", cornerRadius = "Corner Radius",
+        uiOpacity = "UI Opacity", uiScale = "UI Scale", navPulse = "Nav Hover Pulse",
+        randomAccent = "Random Accent", hue = "Hue",
+        watermark = "Watermark", wmEnabled = "Enabled", wmTitle = "Title",
+        wmSubtitle = "Subtitle", wmPosition = "Position", wmOffX = "Offset X",
+        wmOffY = "Offset Y", wmFontSize = "Font Size", wmPadding = "Padding",
+        wmCorner = "Corner Radius", wmOpacity = "Opacity", wmShadow = "Shadow",
+        wmBg = "Background Panel", wmUseAccent = "Use Theme Accent",
+        wmColor = "Watermark Color",
+        wmShowFps = "Show FPS", wmShowPing = "Show Ping", wmShowTime = "Show Time",
+        wmShowUser = "Show Username", wmShowTarget = "Show Target", wmShowKills = "Show Kills",
+        notifications = "Notifications", notifEnabled = "Enabled",
+        notifPos = "Position", notifDur = "Duration", notifMax = "Max Visible",
+        notifWidth = "Width", notifProgress = "Show Progress Bar",
+        notifDismiss = "Click to Dismiss", testNotif = "Test Notification",
+        testDogfight = "Test Dogfight Alert",
+        perf = "Performance", perfBoost = "Master Boost", shadowsOff = "Shadows Off",
+        particlesOff = "Particles Off", throttlePart = "Throttle Particles",
+        particleRate = "Particle Rate", decalsOff = "Decals Off", postFxOff = "Post-FX Off",
+        flatMat = "Flat Materials", hideFar = "Hide Far Parts", hideDist = "Hide Distance",
+        protection = "Protection", antiVoid = "Anti-Void", antiFling = "Anti-Fling",
+        session = "Session", unload = "Unload Script",
+        configTitle = "Configuration", saveConfig = "Save Config", loadConfig = "Load Config",
+        exportConfig = "Export to Clipboard", importConfig = "Import from Clipboard",
+        resetConfig = "Reset to Default", configName = "Config Name",
+        savedConfigs = "Saved Configs", noConfigs = "No saved configs yet.",
+        configSaved = "Config saved", configLoaded = "Config loaded",
+        configExported = "Config copied to clipboard", configImported = "Config imported",
+        configInvalid = "Invalid config string", configReset = "Config reset to default",
+        language = "Language", masterToggle = "Master Toggle",
+        on = "ON", off = "OFF", apply = "Apply", hexInput = "Hex",
+        recent = "Recent", noRecent = "No recent colors",
+        reload = "Reload", delete = "Delete",
+        wog = "Wings of Glory", saved = "Saved",
+    },
+    VN = {
+        combat = "Chiến đấu", visual = "Hiển thị", interface = "Giao diện",
+        config = "Cấu hình", system = "Hệ thống",
+        silentAim = "Ngắm ảo", prediction = "Dự đoán", ballistic = "Bù đạn đạo",
+        teamCheck = "Kiểm tra đội", drawFov = "Vẽ vòng FOV", targetSel = "Chọn mục tiêu",
+        fovRadius = "Bán kính FOV", maxDist = "Khoảng cách tối đa", targetHold = "Giữ mục tiêu",
+        tracers = "Vệt đạn", enableTracers = "Bật vệt đạn", style = "Kiểu",
+        colorA = "Màu vệt A", colorB = "Màu vệt B", target = "Đối tượng",
+        lifetime = "Thời gian sống", thickness = "Độ dày", maxTracers = "Số vệt tối đa",
+        jitter = "Độ nhiễu tia", rbSpeed = "Tốc độ cầu vồng",
+        afterglow = "Dư sáng", tipSpark = "Tia ở đầu",
+        hitbox = "Vùng va chạm", hitboxExp = "Mở rộng hitbox", smartHitbox = "Hitbox thông minh",
+        hitboxDebug = "Hiển thị debug", fuselageMul = "Hệ số thân",
+        wingMul = "Hệ số cánh", healthHigh = "Máu cao",
+        healthMid = "Máu trung", healthLow = "Máu thấp",
+        esp = "ESP", masterEsp = "Bật ESP", box = "Khung", corners = "Góc khung",
+        name = "Tên", nameUpper = "Tên chữ hoa", distance = "Khoảng cách",
+        healthBar = "Thanh máu", healthHoriz = "Máu ngang", healthPulse = "Nhấp nháy máu",
+        skeleton = "Xương", skeletonStyle = "Kiểu xương",
+        offscreen = "Mũi tên ngoài màn hình", bigArrows = "Mũi tên lớn",
+        arrowGlow = "Phát sáng mũi tên", arrowDist = "Khoảng cách mũi tên",
+        textOutline = "Viền chữ", fovLimit = "Giới hạn FOV", espColor = "Màu ESP",
+        boxThickness = "Độ dày khung", minDist = "Khoảng cách min", maxDist2 = "Khoảng cách max",
+        radar = "Radar", radarShape = "Hình dạng", blips = "Chấm", selfMarker = "Vị trí mình",
+        heading = "Hướng", cardinals = "Điểm phương", rangeText = "Text khoảng cách",
+        altOffset = "Lệch độ cao", dirCones = "Nón hướng", blipPulse = "Chấm nhấp nháy",
+        blipColor = "Màu chấm", radarBg = "Nền radar",
+        radarSize = "Kích thước", radarRange = "Phạm vi", radarX = "Lệch X", radarY = "Lệch Y",
+        dogfight = "Cảnh báo không chiến", dogfightEnable = "Bật cảnh báo",
+        showBanner = "Hiện banner", showBorder = "Nhấp nháy viền",
+        showArrows = "Mũi tên chỉ hướng", warnColor = "Màu cảnh báo",
+        detectionRange = "Phạm vi phát hiện", altTolerance = "Dung sai độ cao",
+        headingThresh = "Ngưỡng hướng", ttiMax = "TTI tối đa", minSpeed = "Tốc độ địch tối thiểu",
+        flashSpeed = "Tốc độ nhấp nháy",
+        theme = "Chủ đề", preset = "Mẫu sẵn", cornerRadius = "Bo góc",
+        uiOpacity = "Độ mờ UI", uiScale = "Tỉ lệ UI", navPulse = "Nhấp nháy menu",
+        randomAccent = "Màu ngẫu nhiên", hue = "Sắc độ",
+        watermark = "Watermark", wmEnabled = "Bật", wmTitle = "Tiêu đề",
+        wmSubtitle = "Phụ đề", wmPosition = "Vị trí", wmOffX = "Lệch X",
+        wmOffY = "Lệch Y", wmFontSize = "Cỡ chữ", wmPadding = "Lề",
+        wmCorner = "Bo góc", wmOpacity = "Độ mờ", wmShadow = "Bóng",
+        wmBg = "Nền", wmUseAccent = "Dùng màu chủ đề",
+        wmColor = "Màu watermark",
+        wmShowFps = "Hiện FPS", wmShowPing = "Hiện Ping", wmShowTime = "Hiện giờ",
+        wmShowUser = "Hiện tên", wmShowTarget = "Hiện mục tiêu", wmShowKills = "Hiện kill",
+        notifications = "Thông báo", notifEnabled = "Bật",
+        notifPos = "Vị trí", notifDur = "Thời lượng", notifMax = "Số tối đa",
+        notifWidth = "Chiều rộng", notifProgress = "Thanh tiến trình",
+        notifDismiss = "Click để tắt", testNotif = "Thử thông báo",
+        testDogfight = "Thử cảnh báo không chiến",
+        perf = "Hiệu năng", perfBoost = "Tăng tốc tổng", shadowsOff = "Tắt bóng",
+        particlesOff = "Tắt hạt", throttlePart = "Giảm hạt",
+        particleRate = "Tỉ lệ hạt", decalsOff = "Tắt decal", postFxOff = "Tắt Post-FX",
+        flatMat = "Vật liệu phẳng", hideFar = "Ẩn vật thể xa", hideDist = "Khoảng cách ẩn",
+        protection = "Bảo vệ", antiVoid = "Chống rơi void", antiFling = "Chống fling",
+        session = "Phiên", unload = "Gỡ script",
+        configTitle = "Cấu hình", saveConfig = "Lưu config", loadConfig = "Tải config",
+        exportConfig = "Xuất vào clipboard", importConfig = "Nhập từ clipboard",
+        resetConfig = "Đặt lại mặc định", configName = "Tên config",
+        savedConfigs = "Config đã lưu", noConfigs = "Chưa có config nào.",
+        configSaved = "Đã lưu config", configLoaded = "Đã tải config",
+        configExported = "Đã copy vào clipboard", configImported = "Đã nhập config",
+        configInvalid = "Chuỗi config không hợp lệ", configReset = "Đã reset về mặc định",
+        language = "Ngôn ngữ", masterToggle = "Bật tổng",
+        on = "BẬT", off = "TẮT", apply = "Áp dụng", hexInput = "Hex",
+        recent = "Gần đây", noRecent = "Chưa có màu gần đây",
+        reload = "Tải lại", delete = "Xóa",
+        wog = "Wings of Glory", saved = "Đã lưu",
+    },
+}
+
+local function T(k) return (STR[LANG] and STR[LANG][k]) or STR.EN[k] or k end
+
+-- ============================ CONFIG ============================
+local defaultConfig = {
+    -- master toggles (all OFF by default)
+    MasterSilentAim = false,
+    MasterTracer = false,
+    MasterESP = false,
+    MasterRadar = false,
+    MasterDogfight = false,
+    MasterHitbox = false,
+    MasterPerf = false,
+    MasterProtection = false,
+    MasterWatermark = true,
+    MasterNotifications = true,
+    MasterUI = true,
+
+    -- silent aim
+    PredictionEnabled = true,
+    BallisticCompensation = true,
+    TeamCheck = true,
+    HitPart = "Fuselage",
+    FOVRadius = 650,
+    MaxDistance = 100000,
+    TargetHoldTime = 1.25,
+    TargetSwitchCooldown = 0.35,
+    DrawFOV = true,
+    TargetSelection = "Closest Center",
+
+    -- tracer
+    TracerStyle = "Neon",
+    TracerColorA = Color3.fromRGB(0, 255, 230),
+    TracerColorB = Color3.fromRGB(180, 60, 255),
+    TracerTarget = "Local Only",
+    TracerLifetime = 0.75,
+    TracerThickness = 1.4,
+    TracerJitter = 6,
+    TracerRainbowSpeed = 1.5,
+    MaxTracers = 25,
+    TracerAfterglow = true,
+    TracerTipSpark = true,
+
+    -- esp
+    ESPBox = true,
+    ESPCorner = false,
+    ESPName = true,
+    ESPNameUpper = true,
+    ESPDistance = true,
+    ESPHealthBar = true,
+    ESPHealthHorizontal = false,
+    ESPHealthPulse = true,
+    ESPSkeleton = false,
+    ESPSkeletonStyle = "Capsule",
+    ESPOffscreen = true,
+    ESPOffscreenBig = true,
+    ESPOffscreenGlow = true,
+    ESPOffscreenShowDistance = true,
+    ESPOutline = true,
+    ESPFovOnly = false,
+    ESPColor = Color3.fromRGB(255, 70, 70),
+    ESPBoxThickness = 1,
+    ESPMinDistance = 0,
+    ESPMaxDistance = 5000,
+
+    -- radar
+    RadarShape = "Circle",
+    RadarSize = 160,
+    RadarRange = 3000,
+    RadarPosX = 16,
+    RadarPosY = 16,
+    RadarShowBlips = true,
+    RadarShowSelf = true,
+    RadarShowHeading = true,
+    RadarShowCardinals = true,
+    RadarShowRangeText = true,
+    RadarShowAltitude = true,
+    RadarShowCones = true,
+    RadarShowPulse = true,
+    RadarBlipColor = Color3.fromRGB(255, 80, 80),
+    RadarBgColor = Color3.fromRGB(14, 15, 19),
+
+    -- hitbox
+    SmartHitbox = false,
+    HitboxFuselageMul = 2,
+    HitboxWingMul = 2,
+    HitboxDebug = false,
+    HealthHigh = Color3.fromRGB(60, 220, 100),
+    HealthMid  = Color3.fromRGB(255, 200, 40),
+    HealthLow  = Color3.fromRGB(255, 60, 60),
+
+    -- dogfight
+    DogfightRange = 3000,
+    DogfightAltTolerance = 500,
+    DogfightDotThreshold = 0.65,
+    DogfightTTI = 6,
+    DogfightMinSpeed = 60,
+    DogfightColor = Color3.fromRGB(255, 40, 40),
+    DogfightShowBorder = true,
+    DogfightShowText = true,
+    DogfightShowArrow = true,
+    DogfightFlashSpeed = 4,
+
+    -- perf
+    PerfNoShadows = true,
+    PerfNoParticles = false,
+    PerfThrottleParticles = true,
+    PerfParticleThrottle = 0.15,
+    PerfNoDecals = true,
+    PerfNoPostFX = true,
+    PerfFlatMaterials = true,
+    PerfHideFar = true,
+    PerfHideFarDistance = 5000,
+
+    -- protection
+    AntiVoid = false,
+    AntiFling = false,
+
+    -- ui
+    UITheme = "Amber",
+    UIOpacity = 1,
+    UIScale = 1,
+    UICornerRadius = 14,
+    UINavPulse = true,
+    Language = "EN",
+    MenuKey = "RightShift",
+
+    -- watermark
+    WatermarkText = "wings of glory",
+    WatermarkSub = "v8.7",
+    WatermarkShowFPS = true,
+    WatermarkShowPing = true,
+    WatermarkShowTime = false,
+    WatermarkShowUser = false,
+    WatermarkShowTarget = false,
+    WatermarkShowKills = false,
+    WatermarkPosition = "top-left",
+    WatermarkOffsetX = 14,
+    WatermarkOffsetY = 14,
+    WatermarkFontSize = 12,
+    WatermarkPadding = 10,
+    WatermarkCornerRadius = 14,
+    WatermarkOpacity = 1,
+    WatermarkShadow = true,
+    WatermarkBackground = true,
+    WatermarkUseThemeAccent = true,
+    WatermarkColor = Color3.fromRGB(245, 158, 40),
+    WatermarkTextColor = Color3.fromRGB(235, 235, 240),
+
+    -- notif
+    NotifDuration = 3,
+    NotifMaxVisible = 5,
+    NotifPosition = "top-right",
+    NotifWidth = 320,
+    NotifShowProgress = true,
+    NotifClickDismiss = true,
+}
+
+local Config = {}
+local function copyTable(src)
+    local out = {}
+    for k, v in pairs(src) do out[k] = v end
+    return out
+end
+for k, v in pairs(defaultConfig) do Config[k] = v end
+
+local function resetConfigToDefault()
+    for k in pairs(Config) do Config[k] = nil end
+    for k, v in pairs(defaultConfig) do Config[k] = v end
+end
+
+-- ============================ STATE ============================
+local State = {
+    Running = true,
+    CurrentTarget = nil,
+    CurrentTargetModel = nil,
+    LastTargetChange = 0,
+    LastAcquire = 0,
+    TargetDistance = math.huge,
+    LastInterceptTime = 0,
+    Connections = {},
+    History = {},
+    ActiveTracers = {},
+    OriginalSizes = {},
+    FrameSkip = 0,
+    OriginalNewBullet = nil,
+    WeaponModule = nil,
+    MenuOpen = true,
+    Minimized = false,
+    CollapsedSections = {},
+    LiveStats = {fps = 0, ping = 0},
+    HiddenParts = {},
+    ThrottledParticles = {},
+    SavedParts = {},
+    NotifActive = {},
+    DogfightThreats = {},
+    SilentAimReady = false,
+    MasterToggleRefs = {},
+}
+
+local function trackConnection(conn)
+    table.insert(State.Connections, conn)
+    return conn
+end
+
+-- ============================ HELPERS ============================
+local function safeTween(obj, info, props)
+    if not obj or not obj.Parent then return end
+    pcall(function() TweenService:Create(obj, info, props):Play() end)
+end
+
+local function resolveColor(c)
+    if type(c) == "function" then
+        local ok, res = pcall(c)
+        if ok then return res end
+        return nil
+    end
+    return c
+end
+
+local function hsvToRgb(h, s, v) return Color3.fromHSV(h % 1, s, v) end
+
+local EASING = {
+    Fast   = TweenInfo.new(0.14, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+    Med    = TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+    Slow   = TweenInfo.new(0.36, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+    Spring = TweenInfo.new(0.30, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+}
+
+-- ============================ PLANE CACHE ============================
+local cachedPlaneParts = {}
+local cachedPlaneModels = {}
+local lastPartCacheUpdate = 0
+
+local function modelHasPlaneParts(m)
+    if not m or not m:IsA("Model") then return false end
+    if m:FindFirstChild("Fuselage") then return true end
+    if m.PrimaryPart then return true end
+    return false
+end
+
+local function playerPlaneModel(plr)
+    local direct = Workspace:FindFirstChild(plr.Name)
+    if modelHasPlaneParts(direct) then return direct end
+    for _, obj in ipairs(Workspace:GetChildren()) do
+        if obj:IsA("Model") and obj.Name == plr.Name and modelHasPlaneParts(obj) then return obj end
+    end
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model") and modelHasPlaneParts(obj) then
+            if obj.Name == plr.Name or obj.Name:find(plr.Name, 1, true) then return obj end
+        end
+    end
+    return nil
+end
+
+local function FindAllPlaneParts()
+    local now = os.clock()
+    if now - lastPartCacheUpdate > 0.5 then
+        lastPartCacheUpdate = now
+        table.clear(cachedPlaneParts)
+        table.clear(cachedPlaneModels)
+        local seen, seenModels = {}, {}
+
+        local named = {}
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                local n = obj.Name
+                if n == "Fuselage" or n == "LeftWing" or n == "RightWing" then
+                    local m = obj:FindFirstAncestorWhichIsA("Model")
+                    if m then
+                        named[m] = named[m] or {model = m, fuselage = nil, wings = {}, isBot = false}
+                        if n == "Fuselage" then named[m].fuselage = obj end
+                        if n == "LeftWing" or n == "RightWing" then table.insert(named[m].wings, obj) end
+                    end
+                    if not seen[obj] then seen[obj] = true; table.insert(cachedPlaneParts, obj) end
+                end
+            end
+        end
+        for m, data in pairs(named) do
+            if not seenModels[m] then
+                seenModels[m] = true
+                if not data.fuselage and m.PrimaryPart then data.fuselage = m.PrimaryPart end
+                table.insert(cachedPlaneModels, data)
+            end
+        end
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LP then
+                local m = playerPlaneModel(plr)
+                if m and not seenModels[m] then
+                    seenModels[m] = true
+                    local data = {model = m, fuselage = m:FindFirstChild("Fuselage") or m.PrimaryPart, wings = {}, isBot = false}
+                    for _, n in ipairs({"LeftWing", "RightWing"}) do
+                        local p = m:FindFirstChild(n)
+                        if p and p:IsA("BasePart") then
+                            table.insert(data.wings, p)
+                            if not seen[p] then seen[p] = true; table.insert(cachedPlaneParts, p) end
+                        end
+                    end
+                    if data.fuselage and not seen[data.fuselage] then
+                        seen[data.fuselage] = true; table.insert(cachedPlaneParts, data.fuselage)
+                    end
+                    table.insert(cachedPlaneModels, data)
+                end
+            end
+        end
+        pcall(function()
+            local PS = LP:FindFirstChild("PlayerScripts")
+            local CC = PS and PS:FindFirstChild("ClientCore")
+            local FW = CC and CC:FindFirstChild("Framework")
+            local MD = FW and FW:FindFirstChild("Modules")
+            local CM = MD and MD:FindFirstChild("Camera")
+            if CM then
+                local cam = require(CM)
+                if cam then
+                    for _, fn in ipairs({"plane_viewmodels", "plane_part_viewmodels", "bot_plane_viewmodels"}) do
+                        local f = cam[fn]
+                        if f then
+                            for _, child in ipairs(f:GetChildren()) do
+                                if child:IsA("Model") and not seenModels[child] then
+                                    seenModels[child] = true
+                                    local data = {model = child, fuselage = child:FindFirstChild("Fuselage") or child.PrimaryPart, wings = {}, isBot = (fn == "bot_plane_viewmodels")}
+                                    for _, n in ipairs({"LeftWing", "RightWing"}) do
+                                        local p = child:FindFirstChild(n)
+                                        if p and p:IsA("BasePart") then table.insert(data.wings, p) end
+                                    end
+                                    if data.fuselage then table.insert(cachedPlaneModels, data) end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+    return cachedPlaneParts, cachedPlaneModels
+end
+
+-- ============================ DRAWING POOL ============================
+local DrawingPool = {
+    Lines = {}, Squares = {}, Circles = {}, Texts = {},
+    Indexes = {Line = 1, Square = 1, Circle = 1, Text = 1}
+}
+
+local function ResetDrawingPool()
+    DrawingPool.Indexes.Line = 1
+    DrawingPool.Indexes.Square = 1
+    DrawingPool.Indexes.Circle = 1
+    DrawingPool.Indexes.Text = 1
+    for _, obj in pairs(DrawingPool.Lines) do obj.Visible = false end
+    for _, obj in pairs(DrawingPool.Squares) do obj.Visible = false end
+    for _, obj in pairs(DrawingPool.Circles) do obj.Visible = false end
+    for _, obj in pairs(DrawingPool.Texts) do obj.Visible = false end
+end
+
+local function GetPooledDrawing(kind)
+    local idx = DrawingPool.Indexes[kind]
+    DrawingPool.Indexes[kind] = idx + 1
+    local pool = DrawingPool[kind .. "s"]
+    local obj = pool[idx]
+    if not obj then
+        obj = Drawing.new(kind)
+        pool[idx] = obj
+    end
+    obj.Visible = true
+    return obj
+end
+
+-- ============================ THEME ============================
+local Theme = {
+    Bg=Color3.fromRGB(12,13,17), BgGrad=Color3.fromRGB(19,20,25),
+    Surface=Color3.fromRGB(22,24,29), Surface2=Color3.fromRGB(30,32,38),
+    Surface3=Color3.fromRGB(38,40,48), Hover=Color3.fromRGB(40,42,50),
+    Border=Color3.fromRGB(42,44,52), BorderHi=Color3.fromRGB(64,66,78),
+    Accent=Color3.fromRGB(245,158,40), AccentHi=Color3.fromRGB(255,180,60),
+    AccentDim=Color3.fromRGB(160,100,28), Text=Color3.fromRGB(234,234,240),
+    TextDim=Color3.fromRGB(152,152,162), TextMute=Color3.fromRGB(100,100,110),
+    Danger=Color3.fromRGB(220,70,70), Good=Color3.fromRGB(80,210,130),
+    Warn=Color3.fromRGB(240,170,40),
+}
+
+local UIThemes = {
+    Amber={Accent=Color3.fromRGB(245,158,40),AccentHi=Color3.fromRGB(255,180,60),AccentDim=Color3.fromRGB(160,100,28)},
+    Blue={Accent=Color3.fromRGB(70,150,255),AccentHi=Color3.fromRGB(110,180,255),AccentDim=Color3.fromRGB(45,100,190)},
+    Cyber={Accent=Color3.fromRGB(0,220,255),AccentHi=Color3.fromRGB(90,240,255),AccentDim=Color3.fromRGB(0,140,180)},
+    Crimson={Accent=Color3.fromRGB(230,60,80),AccentHi=Color3.fromRGB(255,100,120),AccentDim=Color3.fromRGB(160,40,60)},
+    Emerald={Accent=Color3.fromRGB(50,220,120),AccentHi=Color3.fromRGB(100,255,160),AccentDim=Color3.fromRGB(30,150,80)},
+    Mono={Accent=Color3.fromRGB(200,200,200),AccentHi=Color3.fromRGB(235,235,235),AccentDim=Color3.fromRGB(140,140,140)},
+    Violet={Accent=Color3.fromRGB(150,100,255),AccentHi=Color3.fromRGB(190,150,255),AccentDim=Color3.fromRGB(90,60,180)},
+}
+
+local function applyTheme(name)
+    local p = UIThemes[name]
+    if not p then return end
+    Config.UITheme = name
+    Theme.Accent = p.Accent; Theme.AccentHi = p.AccentHi; Theme.AccentDim = p.AccentDim
+end
+applyTheme(Config.UITheme)
+
+-- ============================ CORNER + STROKE ============================
+local cornerRegistry = {}
+
+local function corner(obj, scale)
+    scale = scale or 1
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, math.max(0, math.floor(Config.UICornerRadius * scale)))
+    c.Parent = obj
+    if scale <= 5 then table.insert(cornerRegistry, {corner=c, scale=scale}) end
+    return c
+end
+
+local function cornerAbs(obj, r)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, r or 6)
+    c.Parent = obj
+    return c
+end
+
+local function stroke(obj, color, thickness)
+    local s = Instance.new("UIStroke")
+    s.Color = color or Theme.Border
+    s.Thickness = thickness or 1
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    s.Parent = obj
+    return s
+end
+
+local function RepaintCorners()
+    local base = Config.UICornerRadius
+    for _, e in ipairs(cornerRegistry) do
+        if e.corner and e.corner.Parent then
+            e.corner.CornerRadius = UDim.new(0, math.max(0, math.floor(base * e.scale)))
+        end
+    end
+    if _G.__WOG_WM_CORNER then
+        _G.__WOG_WM_CORNER.CornerRadius = UDim.new(0, math.max(0, math.floor(base * (_G.__WOG_WM_SCALE or 1))))
+    end
+    if _G.__WOG_WMSHADOW_CORNER then
+        _G.__WOG_WMSHADOW_CORNER.CornerRadius = UDim.new(0, math.max(0, math.floor(base * (_G.__WOG_WM_SHADOW_SCALE or 1))))
+    end
+end
+
+-- ============================ REPAINT REGISTRY ============================
+local RepaintRegistry = {
+    sliders = {}, toggles = {}, buttons = {}, sections = {}, accentLabels = {}, labels = {},
+}
+
+local function regSlider(fill, handleStroke) table.insert(RepaintRegistry.sliders, {fill=fill, handleStroke=handleStroke}) end
+local function regToggle(pill, knob, accentBar, getState) table.insert(RepaintRegistry.toggles, {pill=pill, knob=knob, accentBar=accentBar, getState=getState}) end
+local function regButton(btn, colorFn) table.insert(RepaintRegistry.buttons, {btn=btn, colorFn=colorFn}) end
+local function regSection(bullet, label) table.insert(RepaintRegistry.sections, {bullet=bullet, label=label}) end
+local function regAccentLabel(obj) table.insert(RepaintRegistry.accentLabels, obj) end
+local function regLabel(obj, getKey) table.insert(RepaintRegistry.labels, {obj=obj, key=getKey}) end
+
+local function RepaintTheme()
+    for _, e in ipairs(RepaintRegistry.sliders) do
+        if e.fill and e.fill.Parent then
+            e.fill.BackgroundColor3 = Theme.Accent
+            local grad = e.fill:FindFirstChildOfClass("UIGradient")
+            if grad then grad.Color = ColorSequence.new(Theme.AccentDim, Theme.Accent) end
+        end
+        if e.handleStroke and e.handleStroke.Parent then e.handleStroke.Color = Theme.Accent end
+    end
+    for _, e in ipairs(RepaintRegistry.toggles) do
+        local on = e.getState and e.getState() or false
+        if e.pill and e.pill.Parent then e.pill.BackgroundColor3 = on and Theme.Accent or Theme.Surface3 end
+        if e.accentBar and e.accentBar.Parent then e.accentBar.BackgroundColor3 = Theme.Accent end
+    end
+    for _, e in ipairs(RepaintRegistry.buttons) do
+        if e.btn and e.btn.Parent then
+            local base = e.colorFn and e.colorFn() or nil
+            if base then e.btn.BackgroundColor3 = base end
+        end
+    end
+    for _, e in ipairs(RepaintRegistry.sections) do
+        if e.bullet and e.bullet.Parent then e.bullet.BackgroundColor3 = Theme.Accent end
+    end
+    for _, lbl in ipairs(RepaintRegistry.accentLabels) do
+        if lbl and lbl.Parent then lbl.TextColor3 = Theme.Accent end
+    end
+    for _, e in ipairs(RepaintRegistry.labels) do
+        if e.obj and e.obj.Parent and e.key then
+            e.obj.Text = T(e.key)
+        end
+    end
+end
+
+local function RepaintUI()
+    pcall(function()
+        -- top bar accent, brand dot, outer glow
+        if _G.__WOG_TOPBAR_ACCENT then _G.__WOG_TOPBAR_ACCENT.BackgroundColor3 = Theme.Accent end
+        if _G.__WOG_BRAND_DOT then _G.__WOG_BRAND_DOT.BackgroundColor3 = Theme.Accent end
+        if _G.__WOG_BRAND_DOT_STROKE then _G.__WOG_BRAND_DOT_STROKE.Color = Theme.AccentHi end
+        if _G.__WOG_OUTER_GLOW then _G.__WOG_OUTER_GLOW.BackgroundColor3 = Theme.Accent end
+        if _G.__WOG_MINI_PILL then
+            _G.__WOG_MINI_PILL.TextColor3 = Theme.Text
+            local s = _G.__WOG_MINI_PILL:FindFirstChildOfClass("UIStroke")
+            if s then s.Color = Theme.Accent end
+        end
+    end)
+    RepaintTheme()
+    RepaintCorners()
+end
+
+-- ============================ GUI SHELL ============================
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Glory_v87"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+pcall(function() ScreenGui.Parent = CoreGui end)
+if not ScreenGui.Parent then ScreenGui.Parent = LP:WaitForChild("PlayerGui") end
+
+-- ============================ NOTIF v3 ============================
+local NotifRoot = Instance.new("Frame")
+NotifRoot.Name = "WOG_Notifs"
+NotifRoot.BackgroundTransparency = 1
+NotifRoot.ZIndex = 3000
+NotifRoot.Parent = ScreenGui
+
+local NotifLayout = Instance.new("UIListLayout")
+NotifLayout.SortOrder = Enum.SortOrder.LayoutOrder
+NotifLayout.Padding = UDim.new(0, 8)
+NotifLayout.Parent = NotifRoot
+
+local function applyNotifPos()
+    local w = Config.NotifWidth
+    NotifRoot.Size = UDim2.new(0, w, 0, 800)
+    if Config.NotifPosition == "top-right" then
+        NotifRoot.AnchorPoint = Vector2.new(1, 0)
+        NotifRoot.Position = UDim2.new(1, -16, 0, 16)
+        NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    elseif Config.NotifPosition == "top-left" then
+        NotifRoot.AnchorPoint = Vector2.new(0, 0)
+        NotifRoot.Position = UDim2.new(0, 16, 0, 16)
+        NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+    elseif Config.NotifPosition == "bottom-right" then
+        NotifRoot.AnchorPoint = Vector2.new(1, 1)
+        NotifRoot.Position = UDim2.new(1, -16, 1, -16)
+        NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    elseif Config.NotifPosition == "bottom-left" then
+        NotifRoot.AnchorPoint = Vector2.new(0, 1)
+        NotifRoot.Position = UDim2.new(0, 16, 1, -16)
+        NotifLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+    end
+end
+applyNotifPos()
+
+local NotifMeta = {
+    info    = { accent = function() return Theme.Accent end, glyph = "i" },
+    success = { accent = function() return Theme.Good end,   glyph = "✓" },
+    warn    = { accent = function() return Theme.Warn end,   glyph = "!" },
+    error   = { accent = function() return Theme.Danger end, glyph = "×" },
+}
+
+local activeNotifCount = 0
+local notifSerial = 0
+local queuedNotifs = {}
+
+local function dismissNotif(entry)
+    if not entry or entry.dismissed then return end
+    entry.dismissed = true
+    local card = entry.card
+    local isRight = Config.NotifPosition:find("right") ~= nil
+    local offX = isRight and (Config.NotifWidth + 60) or -(Config.NotifWidth + 60)
+    safeTween(card, TweenInfo.new(0.28, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+        Position = UDim2.new(0, offX, 0, 0), BackgroundTransparency = 1,
+    })
+    for _, d in ipairs(card:GetDescendants()) do
+        if d:IsA("TextLabel") then safeTween(d, TweenInfo.new(0.22), { TextTransparency = 1 })
+        elseif d:IsA("Frame") or d:IsA("TextButton") then safeTween(d, TweenInfo.new(0.22), { BackgroundTransparency = 1 })
+        elseif d:IsA("UIStroke") then safeTween(d, TweenInfo.new(0.22), { Transparency = 1 }) end
+    end
+    activeNotifCount = math.max(0, activeNotifCount - 1)
+    task.delay(0.32, function() if entry.wrapper and entry.wrapper.Parent then entry.wrapper:Destroy() end end)
+    for i = #State.NotifActive, 1, -1 do
+        if State.NotifActive[i] == entry then table.remove(State.NotifActive, i) end
+    end
+    if #queuedNotifs > 0 then
+        local n = table.remove(queuedNotifs, 1)
+        task.defer(function() SendNotification(n.title, n.message, n.duration, n.kind) end)
+    end
+end
+
+function SendNotification(title, message, duration, kind)
+    if not Config.MasterNotifications then return end
+    duration = duration or Config.NotifDuration
+    kind = kind or "info"
+    title = tostring(title or ""); message = tostring(message or "")
+    if activeNotifCount >= Config.NotifMaxVisible then
+        if #queuedNotifs < 20 then
+            table.insert(queuedNotifs, {title=title, message=message, duration=duration, kind=kind})
+        end
+        return
+    end
+    activeNotifCount = activeNotifCount + 1
+    notifSerial = notifSerial + 1
+    local meta = NotifMeta[kind] or NotifMeta.info
+    local accent = meta.accent()
+    local W = Config.NotifWidth
+
+    local wrapper = Instance.new("Frame")
+    wrapper.Name = "wrap_" .. notifSerial
+    wrapper.Size = UDim2.new(1, 0, 0, 72)
+    wrapper.BackgroundTransparency = 1
+    wrapper.LayoutOrder = notifSerial
+    wrapper.Parent = NotifRoot
+
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(1, 0, 1, 0)
+    card.BackgroundColor3 = Theme.Surface
+    card.BorderSizePixel = 0
+    card.ZIndex = 3001
+    card.ClipsDescendants = true
+    card.Parent = wrapper
+    corner(card, 0.75)
+    local cs = stroke(card, Theme.Border, 1); cs.Transparency = 0.25
+
+    local isRight = Config.NotifPosition:find("right") ~= nil
+    local offX = isRight and (W + 60) or -(W + 60)
+    card.Position = UDim2.new(0, offX, 0, 0)
+
+    local glow = Instance.new("Frame")
+    glow.Size = UDim2.new(0, 6, 1, -14); glow.Position = UDim2.new(0, 0, 0, 7)
+    glow.BackgroundColor3 = accent; glow.BackgroundTransparency = 0.85
+    glow.BorderSizePixel = 0; glow.ZIndex = 3001; glow.Parent = card
+    cornerAbs(glow, 3)
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(0, 3, 1, -14); bar.Position = UDim2.new(0, 0, 0, 7)
+    bar.BackgroundColor3 = accent; bar.BorderSizePixel = 0; bar.ZIndex = 3002
+    bar.Parent = card; cornerAbs(bar, 2)
+
+    local iconBg = Instance.new("Frame")
+    iconBg.Size = UDim2.new(0, 34, 0, 34); iconBg.Position = UDim2.new(0, 16, 0.5, -17)
+    iconBg.BackgroundColor3 = accent; iconBg.BackgroundTransparency = 0.85
+    iconBg.BorderSizePixel = 0; iconBg.ZIndex = 3002; iconBg.Parent = card
+    cornerAbs(iconBg, 17)
+
+    local iconRing = Instance.new("UIStroke")
+    iconRing.Color = accent; iconRing.Thickness = 1.5; iconRing.Transparency = 0.3
+    iconRing.Parent = iconBg
+
+    local glyph = Instance.new("TextLabel")
+    glyph.Size = UDim2.new(1, 0, 1, 0); glyph.BackgroundTransparency = 1
+    glyph.Text = meta.glyph; glyph.TextColor3 = accent
+    glyph.TextSize = 16; glyph.Font = Enum.Font.GothamBold
+    glyph.ZIndex = 3003; glyph.Parent = iconBg
+
+    local titleLbl = Instance.new("TextLabel")
+    titleLbl.Size = UDim2.new(1, -100, 0, 16); titleLbl.Position = UDim2.new(0, 60, 0, 12)
+    titleLbl.BackgroundTransparency = 1; titleLbl.Text = title
+    titleLbl.TextColor3 = Theme.Text; titleLbl.TextSize = 12
+    titleLbl.Font = Enum.Font.GothamBold
+    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    titleLbl.TextTruncate = Enum.TextTruncate.AtEnd
+    titleLbl.ZIndex = 3003; titleLbl.Parent = card
+
+    local msgLbl = Instance.new("TextLabel")
+    msgLbl.Size = UDim2.new(1, -100, 0, 26); msgLbl.Position = UDim2.new(0, 60, 0, 32)
+    msgLbl.BackgroundTransparency = 1; msgLbl.Text = message
+    msgLbl.TextColor3 = Theme.TextDim; msgLbl.TextSize = 11
+    msgLbl.Font = Enum.Font.Gotham
+    msgLbl.TextXAlignment = Enum.TextXAlignment.Left
+    msgLbl.TextYAlignment = Enum.TextYAlignment.Top
+    msgLbl.TextWrapped = true; msgLbl.TextTruncate = Enum.TextTruncate.AtEnd
+    msgLbl.ZIndex = 3003; msgLbl.Parent = card
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 22, 0, 22); closeBtn.Position = UDim2.new(1, -28, 0, 10)
+    closeBtn.BackgroundColor3 = Theme.Surface3; closeBtn.BackgroundTransparency = 1
+    closeBtn.Text = "×"; closeBtn.TextColor3 = Theme.TextMute; closeBtn.TextSize = 14
+    closeBtn.Font = Enum.Font.GothamBold; closeBtn.AutoButtonColor = false
+    closeBtn.ZIndex = 3004; closeBtn.Parent = card; cornerAbs(closeBtn, 5)
+
+    local pbg, pfill
+    if Config.NotifShowProgress and duration > 0 then
+        pbg = Instance.new("Frame")
+        pbg.Size = UDim2.new(1, 0, 0, 2); pbg.Position = UDim2.new(0, 0, 1, -2)
+        pbg.BackgroundColor3 = Theme.Border; pbg.BackgroundTransparency = 0.6
+        pbg.BorderSizePixel = 0; pbg.ZIndex = 3003; pbg.Parent = card
+
+        pfill = Instance.new("Frame")
+        pfill.Size = UDim2.new(1, 0, 1, 0); pfill.BackgroundColor3 = accent
+        pfill.BorderSizePixel = 0; pfill.ZIndex = 3004; pfill.Parent = pbg
+    end
+
+    local entry = {
+        wrapper=wrapper, card=card, dismissed=false, kind=kind, accent=accent,
+        duration=duration, iconBg=iconBg, iconGlyph=glyph, iconRing=iconRing,
+        pfill=pfill, strokeRef=cs, accentBar=bar, accentGlow=glow,
+        titleLbl=titleLbl, msgLbl=msgLbl, closeBtn=closeBtn, progressBg=pbg,
+    }
+    table.insert(State.NotifActive, entry)
+
+    safeTween(card, EASING.Spring, { Position = UDim2.new(0, 0, 0, 0) })
+
+    task.spawn(function()
+        for _ = 1, 2 do
+            if entry.dismissed then return end
+            safeTween(iconBg, TweenInfo.new(0.28, Enum.EasingStyle.Sine), { BackgroundTransparency = 0.55 })
+            safeTween(iconRing, TweenInfo.new(0.28, Enum.EasingStyle.Sine), { Transparency = 0 })
+            task.wait(0.28)
+            safeTween(iconBg, TweenInfo.new(0.28, Enum.EasingStyle.Sine), { BackgroundTransparency = 0.85 })
+            safeTween(iconRing, TweenInfo.new(0.28, Enum.EasingStyle.Sine), { Transparency = 0.3 })
+            task.wait(0.28)
+        end
+    end)
+
+    if pfill and duration > 0 then
+        safeTween(pfill, TweenInfo.new(duration, Enum.EasingStyle.Linear), { Size = UDim2.new(0, 0, 1, 0) })
+    end
+    task.delay(duration, function() dismissNotif(entry) end)
+
+    card.Active = true
+    card.MouseEnter:Connect(function() safeTween(card, TweenInfo.new(0.15), { BackgroundColor3 = Theme.Hover }) end)
+    card.MouseLeave:Connect(function() safeTween(card, TweenInfo.new(0.15), { BackgroundColor3 = Theme.Surface }) end)
+    if Config.NotifClickDismiss then
+        card.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then dismissNotif(entry) end
+        end)
+    end
+    closeBtn.MouseButton1Click:Connect(function() dismissNotif(entry) end)
+end
+
+function RepaintNotifications()
+    if not NotifRoot or not NotifRoot.Parent then return end
+    applyNotifPos()
+    for _, e in ipairs(State.NotifActive) do
+        if e.card and e.card.Parent then
+            e.card.BackgroundColor3 = Theme.Surface
+            if e.strokeRef then e.strokeRef.Color = Theme.Border end
+            if e.accentBar then e.accentBar.BackgroundColor3 = e.accent end
+            if e.accentGlow then e.accentGlow.BackgroundColor3 = e.accent end
+            if e.iconBg then e.iconBg.BackgroundColor3 = e.accent end
+            if e.iconRing then e.iconRing.Color = e.accent end
+            if e.iconGlyph then e.iconGlyph.TextColor3 = e.accent end
+            if e.titleLbl then e.titleLbl.TextColor3 = Theme.Text end
+            if e.msgLbl then e.msgLbl.TextColor3 = Theme.TextDim end
+            if e.closeBtn then e.closeBtn.TextColor3 = Theme.TextMute end
+            if e.progressBg then e.progressBg.BackgroundColor3 = Theme.Border end
+            if e.pfill then e.pfill.BackgroundColor3 = e.accent end
+        end
+    end
+end
+
+local function NotifyToggle(name, state)
+    local msg = state and (T("on")) or (T("off"))
+    SendNotification(name, msg, 2, state and "success" or "warn")
+end
+
+-- ============================ WATERMARK ============================
+local Watermark = Instance.new("Frame")
+Watermark.Name = "WOG_Watermark"
+Watermark.BackgroundColor3 = Theme.Bg
+Watermark.BackgroundTransparency = 0.15
+Watermark.BorderSizePixel = 0
+Watermark.ZIndex = 200
+Watermark.Visible = false
+Watermark.Parent = ScreenGui
+local WmCorner = corner(Watermark, 1)
+local WmStroke = stroke(Watermark, Theme.Accent, 1)
+_G.__WOG_WM_CORNER = WmCorner
+_G.__WOG_WM_SCALE = 1
+
+local WmShadow = Instance.new("Frame")
+WmShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+WmShadow.BackgroundTransparency = 0.75
+WmShadow.BorderSizePixel = 0
+WmShadow.ZIndex = 199
+WmShadow.Visible = false
+WmShadow.Parent = ScreenGui
+local WmShadowCorner = corner(WmShadow, 1.15)
+_G.__WOG_WMSHADOW_CORNER = WmShadowCorner
+_G.__WOG_WM_SHADOW_SCALE = 1.15
+
+local WmInner = Instance.new("Frame")
+WmInner.BackgroundTransparency = 1
+WmInner.Size = UDim2.new(1, 0, 1, 0)
+WmInner.Parent = Watermark
+
+local WmPad = Instance.new("UIPadding")
+WmPad.PaddingLeft = UDim.new(0, Config.WatermarkPadding)
+WmPad.PaddingRight = UDim.new(0, Config.WatermarkPadding)
+WmPad.PaddingTop = UDim.new(0, Config.WatermarkPadding)
+WmPad.PaddingBottom = UDim.new(0, Config.WatermarkPadding)
+WmPad.Parent = WmInner
+
+local WmLayout = Instance.new("UIListLayout")
+WmLayout.FillDirection = Enum.FillDirection.Horizontal
+WmLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+WmLayout.SortOrder = Enum.SortOrder.LayoutOrder
+WmLayout.Padding = UDim.new(0, 8)
+WmLayout.Parent = WmInner
+
+local WmDotGlow = Instance.new("Frame")
+WmDotGlow.Size = UDim2.new(0, 12, 0, 12)
+WmDotGlow.BackgroundColor3 = Theme.Accent
+WmDotGlow.BackgroundTransparency = 0.7
+WmDotGlow.BorderSizePixel = 0
+WmDotGlow.LayoutOrder = 1
+WmDotGlow.Parent = WmInner
+cornerAbs(WmDotGlow, 6)
+
+local WmDot = Instance.new("Frame")
+WmDot.Size = UDim2.new(0, 6, 0, 6)
+WmDot.Position = UDim2.new(0.5, -3, 0.5, -3)
+WmDot.BackgroundColor3 = Theme.Accent
+WmDot.BorderSizePixel = 0
+WmDot.ZIndex = 2
+WmDot.Parent = WmDotGlow
+cornerAbs(WmDot, 3)
+
+local WmText = Instance.new("TextLabel")
+WmText.Size = UDim2.new(0, 0, 1, 0)
+WmText.AutomaticSize = Enum.AutomaticSize.X
+WmText.BackgroundTransparency = 1
+WmText.Text = Config.WatermarkText
+WmText.TextColor3 = Config.WatermarkTextColor
+WmText.TextSize = Config.WatermarkFontSize
+WmText.Font = Enum.Font.GothamBold
+WmText.TextXAlignment = Enum.TextXAlignment.Left
+WmText.LayoutOrder = 2
+WmText.Parent = WmInner
+
+local WmSub = Instance.new("TextLabel")
+WmSub.Size = UDim2.new(0, 0, 1, 0)
+WmSub.AutomaticSize = Enum.AutomaticSize.X
+WmSub.BackgroundTransparency = 1
+WmSub.Text = Config.WatermarkSub
+WmSub.TextColor3 = Theme.Accent
+WmSub.TextSize = Config.WatermarkFontSize - 2
+WmSub.Font = Enum.Font.Code
+WmSub.TextXAlignment = Enum.TextXAlignment.Left
+WmSub.LayoutOrder = 3
+WmSub.Parent = WmInner
+
+local WmDiv = Instance.new("Frame")
+WmDiv.Size = UDim2.new(0, 1, 0.7, 0)
+WmDiv.BackgroundColor3 = Theme.Border
+WmDiv.BorderSizePixel = 0
+WmDiv.LayoutOrder = 4
+WmDiv.Parent = WmInner
+
+local WmStats = Instance.new("TextLabel")
+WmStats.Size = UDim2.new(0, 0, 1, 0)
+WmStats.AutomaticSize = Enum.AutomaticSize.X
+WmStats.BackgroundTransparency = 1
+WmStats.Text = ""
+WmStats.TextColor3 = Theme.TextDim
+WmStats.TextSize = Config.WatermarkFontSize - 1
+WmStats.Font = Enum.Font.Code
+WmStats.TextXAlignment = Enum.TextXAlignment.Left
+WmStats.LayoutOrder = 5
+WmStats.Parent = WmInner
+
+local function WmStatsOn()
+    return Config.WatermarkShowFPS or Config.WatermarkShowPing or Config.WatermarkShowTime
+        or Config.WatermarkShowUser or Config.WatermarkShowTarget or Config.WatermarkShowKills
+end
+
+local function computeWmWidth()
+    local total = 0
+    if Config.WatermarkBackground then total = total + Config.WatermarkPadding * 2 end
+    total = total + 12 + 8
+    total = total + #Config.WatermarkText * (Config.WatermarkFontSize * 0.62) + 8
+    if Config.WatermarkSub ~= "" then
+        total = total + #Config.WatermarkSub * ((Config.WatermarkFontSize - 2) * 0.62)
+    end
+    if WmStatsOn() then total = total + 1 + 8 + 130 end
+    return math.max(total, 120)
+end
+
+local function computeWmPos(size)
+    local ox, oy = Config.WatermarkOffsetX, Config.WatermarkOffsetY
+    local pos = Config.WatermarkPosition
+    local w, h = size.X, size.Y
+    if pos == "top-left" then return UDim2.new(0, ox, 0, oy)
+    elseif pos == "top-center" then return UDim2.new(0.5, -w/2, 0, oy)
+    elseif pos == "top-right" then return UDim2.new(1, -w - ox, 0, oy)
+    elseif pos == "bottom-left" then return UDim2.new(0, ox, 1, -h - oy)
+    elseif pos == "bottom-center" then return UDim2.new(0.5, -w/2, 1, -h - oy)
+    elseif pos == "bottom-right" then return UDim2.new(1, -w - ox, 1, -h - oy)
+    end
+    return UDim2.new(0, ox, 0, oy)
+end
+
+local function RepaintWatermark()
+    if not Watermark or not Watermark.Parent then return end
+    Watermark.Visible = Config.MasterWatermark
+    WmShadow.Visible = Config.MasterWatermark and Config.WatermarkShadow
+    Watermark.BackgroundColor3 = Theme.Bg
+    Watermark.BackgroundTransparency = 1 - Config.WatermarkOpacity
+    WmShadow.BackgroundTransparency = 1 - (Config.WatermarkOpacity * 0.5)
+    WmShadow.ZIndex = Watermark.ZIndex - 1
+    local factor = Config.UICornerRadius / 14
+    WmCorner.CornerRadius = UDim.new(0, math.max(0, math.floor(Config.WatermarkCornerRadius * factor)))
+    WmShadowCorner.CornerRadius = UDim.new(0, math.max(0, math.floor((Config.WatermarkCornerRadius + 3) * factor)))
+    WmText.Text = Config.WatermarkText
+    WmText.TextSize = Config.WatermarkFontSize
+    WmText.TextColor3 = Config.WatermarkTextColor
+    WmSub.Text = Config.WatermarkSub
+    WmSub.TextSize = math.max(Config.WatermarkFontSize - 2, 8)
+    WmStats.TextSize = math.max(Config.WatermarkFontSize - 1, 9)
+    WmPad.PaddingLeft = UDim.new(0, Config.WatermarkPadding)
+    WmPad.PaddingRight = UDim.new(0, Config.WatermarkPadding)
+    WmPad.PaddingTop = UDim.new(0, Config.WatermarkPadding)
+    WmPad.PaddingBottom = UDim.new(0, Config.WatermarkPadding)
+    if Config.WatermarkBackground then
+        Watermark.BackgroundTransparency = 1 - Config.WatermarkOpacity
+        WmStroke.Transparency = 0
+    else
+        Watermark.BackgroundTransparency = 1
+        WmStroke.Transparency = 1
+    end
+    WmDotGlow.Visible = Config.WatermarkBackground
+    WmDot.Visible = Config.WatermarkBackground
+    WmSub.Visible = Config.WatermarkSub ~= ""
+    local statsOn = WmStatsOn()
+    WmDiv.Visible = statsOn
+    WmStats.Visible = statsOn
+    local w = computeWmWidth()
+    local h = Config.WatermarkFontSize + Config.WatermarkPadding * 2 + 6
+    Watermark.Size = UDim2.new(0, w, 0, h)
+    WmShadow.Size = UDim2.new(0, w + 4, 0, h + 4)
+    local pos = computeWmPos(Vector2.new(w, h))
+    Watermark.Position = pos
+    WmShadow.Position = UDim2.new(pos.X.Scale, pos.X.Offset - 2, pos.Y.Scale, pos.Y.Offset + 2)
+    local accent = Config.WatermarkUseThemeAccent and Theme.Accent or Config.WatermarkColor
+    WmStroke.Color = accent
+    WmDotGlow.BackgroundColor3 = accent
+    WmDot.BackgroundColor3 = accent
+    WmSub.TextColor3 = accent
+end
+
+task.spawn(function()
+    while ScreenGui.Parent and State.Running do
+        if Config.MasterWatermark then
+            local parts = {}
+            if Config.WatermarkShowFPS then table.insert(parts, State.LiveStats.fps .. " fps") end
+            if Config.WatermarkShowPing then table.insert(parts, State.LiveStats.ping .. " ms") end
+            if Config.WatermarkShowTime then table.insert(parts, os.date("%H:%M:%S")) end
+            if Config.WatermarkShowUser then table.insert(parts, LP.Name) end
+            if Config.WatermarkShowTarget then table.insert(parts, State.CurrentTarget or "—") end
+            WmStats.Text = table.concat(parts, "  ·  ")
+            local w = computeWmWidth()
+            local h = Config.WatermarkFontSize + Config.WatermarkPadding * 2 + 6
+            Watermark.Size = UDim2.new(0, w, 0, h)
+            WmShadow.Size = UDim2.new(0, w + 4, 0, h + 4)
+            local pos = computeWmPos(Vector2.new(w, h))
+            Watermark.Position = pos
+            WmShadow.Position = UDim2.new(pos.X.Scale, pos.X.Offset - 2, pos.Y.Scale, pos.Y.Offset + 2)
+        end
+        task.wait(0.5)
+    end
+end)
+
+task.spawn(function()
+    local frames, last = 0, os.clock()
+    while ScreenGui.Parent and State.Running do
+        frames = frames + 1
+        RunService.RenderStepped:Wait()
+        local now = os.clock()
+        if now - last >= 1 then
+            State.LiveStats.fps = math.floor(frames / (now - last) + 0.5)
+            frames, last = 0, now
+            pcall(function()
+                local S = game:GetService("Stats")
+                State.LiveStats.ping = math.floor(S.Network.ServerStatsItem["Data Ping"]:GetValue())
+            end)
+        end
+    end
+end)
+-- ==== POPUP LAYER ====
+local PopupLayer = Instance.new("Frame")
+PopupLayer.Size = UDim2.new(1, 0, 1, 0)
+PopupLayer.BackgroundTransparency = 1
+PopupLayer.ZIndex = 999
+PopupLayer.Parent = ScreenGui
+
+local ClickCatcher = Instance.new("TextButton")
+ClickCatcher.Size = UDim2.new(1, 0, 1, 0)
+ClickCatcher.BackgroundTransparency = 1
+ClickCatcher.Text = ""
+ClickCatcher.ZIndex = 998
+ClickCatcher.Visible = false
+ClickCatcher.Parent = ScreenGui
+
+local openPopups = {}
+local function closeAllPopups()
+    for _, p in ipairs(openPopups) do
+        if p and p.Parent then p:Destroy() end
+    end
+    table.clear(openPopups)
+    ClickCatcher.Visible = false
+end
+ClickCatcher.MouseButton1Click:Connect(closeAllPopups)
+
+-- ==== MAIN WINDOW ====
+local WIN_W, WIN_H = 780, 520
+local SIDEBAR_W = 190
+local minW, minH = 640, 440
+local maxW, maxH = 1300, 900
+local baseW, baseH = WIN_W, WIN_H
+
+local Shadow = Instance.new("Frame")
+Shadow.Size = UDim2.new(0, WIN_W + 10, 0, WIN_H + 10)
+Shadow.Position = UDim2.new(0.5, -(WIN_W/2) - 5, 0.5, -(WIN_H/2) - 5)
+Shadow.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Shadow.BackgroundTransparency = 0.55
+Shadow.BorderSizePixel = 0
+Shadow.ZIndex = 0
+Shadow.Parent = ScreenGui
+corner(Shadow, 1.3)
+
+local OuterGlow = Instance.new("Frame")
+OuterGlow.Size = UDim2.new(0, WIN_W + 20, 0, WIN_H + 20)
+OuterGlow.Position = UDim2.new(0.5, -(WIN_W/2) - 10, 0.5, -(WIN_H/2) - 10)
+OuterGlow.BackgroundColor3 = Theme.Accent
+OuterGlow.BackgroundTransparency = 0.9
+OuterGlow.BorderSizePixel = 0
+OuterGlow.ZIndex = -1
+OuterGlow.Parent = ScreenGui
+corner(OuterGlow, 1.7)
+_G.__WOG_OUTER_GLOW = OuterGlow
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, WIN_W, 0, WIN_H)
+MainFrame.Position = UDim2.new(0.5, -(WIN_W/2), 0.5, -(WIN_H/2))
+MainFrame.BackgroundColor3 = Theme.Bg
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+corner(MainFrame, 1)
+stroke(MainFrame, Theme.Border, 1)
+
+local WinGrad = Instance.new("UIGradient")
+WinGrad.Rotation = 90
+WinGrad.Color = ColorSequence.new(Theme.BgGrad, Theme.Bg)
+WinGrad.Parent = MainFrame
+
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.new(0, SIDEBAR_W, 1, 0)
+Sidebar.BackgroundColor3 = Theme.Surface
+Sidebar.BorderSizePixel = 0
+Sidebar.Parent = MainFrame
+
+local SidebarBorder = Instance.new("Frame")
+SidebarBorder.Size = UDim2.new(0, 1, 1, 0)
+SidebarBorder.Position = UDim2.new(1, -1, 0, 0)
+SidebarBorder.BackgroundColor3 = Theme.Border
+SidebarBorder.BorderSizePixel = 0
+SidebarBorder.Parent = Sidebar
+
+local BrandHolder = Instance.new("Frame")
+BrandHolder.Size = UDim2.new(1, 0, 0, 64)
+BrandHolder.BackgroundTransparency = 1
+BrandHolder.Parent = Sidebar
+
+local BrandDotGlow = Instance.new("Frame")
+BrandDotGlow.Size = UDim2.new(0, 18, 0, 18)
+BrandDotGlow.Position = UDim2.new(0, 16, 0, 16)
+BrandDotGlow.BackgroundColor3 = Theme.Accent
+BrandDotGlow.BackgroundTransparency = 0.8
+BrandDotGlow.BorderSizePixel = 0
+BrandDotGlow.Parent = BrandHolder
+cornerAbs(BrandDotGlow, 9)
+
+local BrandDot = Instance.new("Frame")
+BrandDot.Size = UDim2.new(0, 10, 0, 10)
+BrandDot.Position = UDim2.new(0, 20, 0, 20)
+BrandDot.BackgroundColor3 = Theme.Accent
+BrandDot.BorderSizePixel = 0
+BrandDot.Parent = BrandHolder
+cornerAbs(BrandDot, 5)
+local BrandDotStroke = stroke(BrandDot, Theme.AccentHi, 1)
+_G.__WOG_BRAND_DOT = BrandDot
+_G.__WOG_BRAND_DOT_STROKE = BrandDotStroke
+
+task.spawn(function()
+    local pulse = false
+    while ScreenGui.Parent and State.Running do
+        safeTween(BrandDot, TweenInfo.new(1.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            BackgroundColor3 = pulse and Theme.AccentHi or Theme.Accent,
+        })
+        pulse = not pulse
+        task.wait(1.4)
+    end
+end)
+
+local BrandLabel = Instance.new("TextLabel")
+BrandLabel.Size = UDim2.new(1, -50, 0, 18)
+BrandLabel.Position = UDim2.new(0, 38, 0, 18)
+BrandLabel.BackgroundTransparency = 1
+BrandLabel.Text = "WINGS OF GLORY"
+BrandLabel.TextColor3 = Theme.Text
+BrandLabel.TextSize = 11
+BrandLabel.Font = Enum.Font.GothamBold
+BrandLabel.TextXAlignment = Enum.TextXAlignment.Left
+BrandLabel.Parent = BrandHolder
+
+local BrandSub = Instance.new("TextLabel")
+BrandSub.Size = UDim2.new(1, -50, 0, 14)
+BrandSub.Position = UDim2.new(0, 38, 0, 32)
+BrandSub.BackgroundTransparency = 1
+BrandSub.Text = "v8.7"
+BrandSub.TextColor3 = Theme.TextMute
+BrandSub.TextSize = 9
+BrandSub.Font = Enum.Font.Code
+BrandSub.TextXAlignment = Enum.TextXAlignment.Left
+BrandSub.Parent = BrandHolder
+
+local NavHolder = Instance.new("Frame")
+NavHolder.Size = UDim2.new(1, 0, 1, -140)
+NavHolder.Position = UDim2.new(0, 0, 0, 64)
+NavHolder.BackgroundTransparency = 1
+NavHolder.Parent = Sidebar
+
+local NavLayout = Instance.new("UIListLayout")
+NavLayout.Padding = UDim.new(0, 4)
+NavLayout.Parent = NavHolder
+
+local NavPad = Instance.new("UIPadding")
+NavPad.PaddingLeft = UDim.new(0, 10)
+NavPad.PaddingRight = UDim.new(0, 10)
+NavPad.PaddingTop = UDim.new(0, 4)
+NavPad.Parent = NavHolder
+
+local SidebarFooter = Instance.new("Frame")
+SidebarFooter.Size = UDim2.new(1, 0, 0, 76)
+SidebarFooter.Position = UDim2.new(0, 0, 1, -76)
+SidebarFooter.BackgroundTransparency = 1
+SidebarFooter.Parent = Sidebar
+
+local FooterDiv = Instance.new("Frame")
+FooterDiv.Size = UDim2.new(1, -20, 0, 1)
+FooterDiv.Position = UDim2.new(0, 10, 0, 0)
+FooterDiv.BackgroundColor3 = Theme.Border
+FooterDiv.BorderSizePixel = 0
+FooterDiv.Parent = SidebarFooter
+
+local SidebarFps = Instance.new("TextLabel")
+SidebarFps.Size = UDim2.new(1, -20, 0, 16)
+SidebarFps.Position = UDim2.new(0, 10, 0, 14)
+SidebarFps.BackgroundTransparency = 1
+SidebarFps.Text = "FPS --"
+SidebarFps.TextColor3 = Theme.TextDim
+SidebarFps.TextSize = 10
+SidebarFps.Font = Enum.Font.Code
+SidebarFps.TextXAlignment = Enum.TextXAlignment.Left
+SidebarFps.Parent = SidebarFooter
+
+local SidebarPing = Instance.new("TextLabel")
+SidebarPing.Size = UDim2.new(1, -20, 0, 16)
+SidebarPing.Position = UDim2.new(0, 10, 0, 30)
+SidebarPing.BackgroundTransparency = 1
+SidebarPing.Text = "Ping --"
+SidebarPing.TextColor3 = Theme.TextDim
+SidebarPing.TextSize = 10
+SidebarPing.Font = Enum.Font.Code
+SidebarPing.TextXAlignment = Enum.TextXAlignment.Left
+SidebarPing.Parent = SidebarFooter
+
+local SidebarHint = Instance.new("TextLabel")
+SidebarHint.Size = UDim2.new(1, -20, 0, 16)
+SidebarHint.Position = UDim2.new(0, 10, 0, 50)
+SidebarHint.BackgroundTransparency = 1
+SidebarHint.Text = "RightShift toggles"
+SidebarHint.TextColor3 = Theme.TextMute
+SidebarHint.TextSize = 9
+SidebarHint.Font = Enum.Font.Code
+SidebarHint.TextXAlignment = Enum.TextXAlignment.Left
+SidebarHint.Parent = SidebarFooter
+
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, -SIDEBAR_W, 0, 52)
+TopBar.Position = UDim2.new(0, SIDEBAR_W, 0, 0)
+TopBar.BackgroundColor3 = Theme.Surface
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopBarAccent = Instance.new("Frame")
+TopBarAccent.Size = UDim2.new(1, 0, 0, 2)
+TopBarAccent.Position = UDim2.new(0, 0, 1, -3)
+TopBarAccent.BackgroundColor3 = Theme.Accent
+TopBarAccent.BorderSizePixel = 0
+TopBarAccent.Parent = TopBar
+_G.__WOG_TOPBAR_ACCENT = TopBarAccent
+
+local TopBarBorder = Instance.new("Frame")
+TopBarBorder.Size = UDim2.new(1, 0, 0, 1)
+TopBarBorder.Position = UDim2.new(0, 0, 1, -1)
+TopBarBorder.BackgroundColor3 = Theme.Border
+TopBarBorder.BorderSizePixel = 0
+TopBarBorder.Parent = TopBar
+
+local PageTitle = Instance.new("TextLabel")
+PageTitle.Size = UDim2.new(0, 300, 0, 20)
+PageTitle.Position = UDim2.new(0, 20, 0, 8)
+PageTitle.BackgroundTransparency = 1
+PageTitle.Text = "Combat"
+PageTitle.TextColor3 = Theme.Text
+PageTitle.TextSize = 14
+PageTitle.Font = Enum.Font.GothamBold
+PageTitle.TextXAlignment = Enum.TextXAlignment.Left
+PageTitle.Parent = TopBar
+
+local PageSub = Instance.new("TextLabel")
+PageSub.Size = UDim2.new(0, 300, 0, 14)
+PageSub.Position = UDim2.new(0, 20, 0, 28)
+PageSub.BackgroundTransparency = 1
+PageSub.Text = ""
+PageSub.TextColor3 = Theme.TextMute
+PageSub.TextSize = 10
+PageSub.Font = Enum.Font.Code
+PageSub.TextXAlignment = Enum.TextXAlignment.Left
+PageSub.Parent = TopBar
+
+local function makeCtrlBtn(x, glyph, hoverColor, cb)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 26, 0, 26)
+    b.Position = UDim2.new(1, x, 0.5, -13)
+    b.BackgroundColor3 = Theme.Surface2
+    b.BackgroundTransparency = 1
+    b.Text = glyph
+    b.TextColor3 = Theme.TextDim
+    b.TextSize = 13
+    b.Font = Enum.Font.GothamBold
+    b.AutoButtonColor = false
+    b.Parent = TopBar
+    corner(b, 0.5)
+    b.MouseEnter:Connect(function()
+        safeTween(b, EASING.Fast, { BackgroundTransparency = 0, BackgroundColor3 = hoverColor, TextColor3 = Theme.Text })
+    end)
+    b.MouseLeave:Connect(function()
+        safeTween(b, EASING.Fast, { BackgroundTransparency = 1, TextColor3 = Theme.TextDim })
+    end)
+    b.MouseButton1Click:Connect(cb)
+    return b
+end
+makeCtrlBtn(-66, "−", Theme.Surface3, function() MinimizeWindow(true) end)
+makeCtrlBtn(-34, "×", Theme.Danger, function() SetMenuOpen(false) end)
+
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -SIDEBAR_W - 24, 1, -80)
+Content.Position = UDim2.new(0, SIDEBAR_W + 12, 0, 64)
+Content.BackgroundTransparency = 1
+Content.Parent = MainFrame
+
+local ResizeGrip = Instance.new("TextButton")
+ResizeGrip.Size = UDim2.new(0, 16, 0, 16)
+ResizeGrip.Position = UDim2.new(1, -18, 1, -18)
+ResizeGrip.BackgroundTransparency = 1
+ResizeGrip.Text = "◢"
+ResizeGrip.TextColor3 = Theme.TextMute
+ResizeGrip.TextSize = 11
+ResizeGrip.Font = Enum.Font.Code
+ResizeGrip.Parent = MainFrame
+
+local resizing, resizeStart, resizeOrigin
+trackConnection(ResizeGrip.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing = true
+        resizeStart = input.Position
+        resizeOrigin = MainFrame.Size
+    end
+end))
+trackConnection(UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then resizing = false end
+end))
+trackConnection(UserInputService.InputChanged:Connect(function(input)
+    if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local dx = input.Position.X - resizeStart.X
+        local dy = input.Position.Y - resizeStart.Y
+        local w = math.clamp(resizeOrigin.X.Offset + dx, minW, maxW)
+        local h = math.clamp(resizeOrigin.Y.Offset + dy, minH, maxH)
+        MainFrame.Size = UDim2.new(0, w, 0, h)
+        Shadow.Size = UDim2.new(0, w + 10, 0, h + 10)
+        OuterGlow.Size = UDim2.new(0, w + 20, 0, h + 20)
+        baseW, baseH = w, h
+    end
+end))
+
+local dragging, dragStart, startPos
+trackConnection(TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end))
+
+trackConnection(UserInputService.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        Shadow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X - 5, startPos.Y.Scale, startPos.Y.Offset + delta.Y - 5)
+        OuterGlow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X - 10, startPos.Y.Scale, startPos.Y.Offset + delta.Y - 10)
+    end
+end))
+
+local MiniPill = Instance.new("TextButton")
+MiniPill.Size = UDim2.new(0, 130, 0, 30)
+MiniPill.Position = UDim2.new(0.5, -65, 0, 12)
+MiniPill.BackgroundColor3 = Theme.Surface
+MiniPill.BorderSizePixel = 0
+MiniPill.Text = "WOG  ·  show"
+MiniPill.TextColor3 = Theme.Text
+MiniPill.TextSize = 11
+MiniPill.Font = Enum.Font.GothamBold
+MiniPill.AutoButtonColor = false
+MiniPill.Visible = false
+MiniPill.ZIndex = 100
+MiniPill.Parent = ScreenGui
+cornerAbs(MiniPill, 15)
+stroke(MiniPill, Theme.Accent, 1.5)
+_G.__WOG_MINI_PILL = MiniPill
+
+MiniPill.MouseButton1Click:Connect(function() MinimizeWindow(false) end)
+MiniPill.MouseEnter:Connect(function() safeTween(MiniPill, EASING.Fast, { BackgroundColor3 = Theme.Hover }) end)
+MiniPill.MouseLeave:Connect(function() safeTween(MiniPill, EASING.Fast, { BackgroundColor3 = Theme.Surface }) end)
+
+function MinimizeWindow(state)
+    state = state ~= false
+    State.Minimized = state
+    if state then
+        safeTween(MainFrame, EASING.Med, {
+            Size = UDim2.new(0, baseW * 0.85, 0, baseH * 0.85),
+            Position = UDim2.new(0.5, -(baseW*0.85/2), 0.5, -(baseH*0.85/2)),
+            BackgroundTransparency = 1,
+        })
+        safeTween(Shadow, EASING.Med, { BackgroundTransparency = 1 })
+        safeTween(OuterGlow, EASING.Med, { BackgroundTransparency = 1 })
+        task.delay(0.24, function()
+            if State.Minimized then
+                MainFrame.Visible = false
+                Shadow.Visible = false
+                OuterGlow.Visible = false
+                MiniPill.Visible = true
+                MiniPill.Size = UDim2.new(0, 0, 0, 30)
+                safeTween(MiniPill, EASING.Spring, { Size = UDim2.new(0, 130, 0, 30) })
+            end
+        end)
+    else
+        MiniPill.Visible = false
+        MainFrame.Visible = true
+        Shadow.Visible = true
+        OuterGlow.Visible = true
+        MainFrame.BackgroundTransparency = 0.4
+        MainFrame.Size = UDim2.new(0, baseW * 0.92, 0, baseH * 0.92)
+        MainFrame.Position = UDim2.new(0.5, -(baseW*0.92/2), 0.5, -(baseH*0.92/2))
+        safeTween(MainFrame, EASING.Slow, {
+            Size = UDim2.new(0, baseW, 0, baseH),
+            Position = UDim2.new(0.5, -(baseW/2), 0.5, -(baseH/2)),
+            BackgroundTransparency = 0,
+        })
+        safeTween(Shadow, EASING.Slow, { BackgroundTransparency = 0.55 })
+        safeTween(OuterGlow, EASING.Slow, { BackgroundTransparency = 0.9 })
+        State.MenuOpen = true
+    end
+end
+
+function SetMenuOpen(open)
+    if State.MenuOpen == open then return end
+    State.MenuOpen = open
+    closeAllPopups()
+    if open then
+        MiniPill.Visible = false
+        State.Minimized = false
+        MainFrame.Visible = true
+        Shadow.Visible = true
+        OuterGlow.Visible = true
+        MainFrame.Size = UDim2.new(0, baseW * 0.94, 0, baseH * 0.94)
+        MainFrame.Position = UDim2.new(0.5, -(baseW*0.94/2), 0.5, -(baseH*0.94/2))
+        MainFrame.BackgroundTransparency = 0.4
+        Shadow.BackgroundTransparency = 1
+        OuterGlow.BackgroundTransparency = 1
+        safeTween(MainFrame, EASING.Slow, {
+            Size = UDim2.new(0, baseW, 0, baseH),
+            Position = UDim2.new(0.5, -(baseW/2), 0.5, -(baseH/2)),
+            BackgroundTransparency = 0,
+        })
+        safeTween(Shadow, EASING.Slow, { BackgroundTransparency = 0.55 })
+        safeTween(OuterGlow, EASING.Slow, { BackgroundTransparency = 0.9 })
+    else
+        safeTween(MainFrame, EASING.Med, {
+            Size = UDim2.new(0, baseW * 0.9, 0, baseH * 0.9),
+            Position = UDim2.new(0.5, -(baseW*0.9/2), 0.5, -(baseH*0.9/2)),
+            BackgroundTransparency = 0.6,
+        })
+        safeTween(Shadow, EASING.Med, { BackgroundTransparency = 1 })
+        safeTween(OuterGlow, EASING.Med, { BackgroundTransparency = 1 })
+        task.delay(0.24, function()
+            if not State.MenuOpen then
+                MainFrame.Visible = false
+                Shadow.Visible = false
+                OuterGlow.Visible = false
+            end
+        end)
+    end
+end
+
+task.spawn(function()
+    while ScreenGui.Parent and State.Running do
+        task.wait(0.5)
+        pcall(function()
+            SidebarFps.Text = "FPS " .. State.LiveStats.fps
+            SidebarPing.Text = "Ping " .. State.LiveStats.ping .. " ms"
+        end)
+    end
+end)
+
+-- ==== ICONS ====
+local iconRegistry = {}
+local function drawIcon(holder, kind)
+    holder.BackgroundTransparency = 1
+    holder.Size = UDim2.new(0, 20, 0, 20)
+    local parts = {}
+    local function mkFrame(size, pos)
+        local f = Instance.new("Frame")
+        f.Size = size; f.Position = pos; f.BackgroundColor3 = Theme.TextDim
+        f.BorderSizePixel = 0; f.ZIndex = 3; f.Parent = holder
+        table.insert(parts, {obj=f, prop="BackgroundColor3"}); return f
+    end
+    local function mkStroke(obj, color)
+        local s = stroke(obj, color or Theme.TextDim, 1.5)
+        table.insert(parts, {obj=s, prop="Color"}); return s
+    end
+    if kind == "swords" then
+        local a = mkFrame(UDim2.new(0,14,0,2), UDim2.new(0.5,-7,0.5,-1)); a.Rotation = 45; cornerAbs(a,1)
+        local b = mkFrame(UDim2.new(0,14,0,2), UDim2.new(0.5,-7,0.5,-1)); b.Rotation = -45; cornerAbs(b,1)
+    elseif kind == "eye" then
+        local ring = mkFrame(UDim2.new(0,14,0,14), UDim2.new(0.5,-7,0.5,-7))
+        ring.BackgroundTransparency = 1; cornerAbs(ring,7); mkStroke(ring)
+        local dot = mkFrame(UDim2.new(0,6,0,6), UDim2.new(0.5,-3,0.5,-3)); cornerAbs(dot,3)
+    elseif kind == "diamond" then
+        local sq = mkFrame(UDim2.new(0,12,0,12), UDim2.new(0.5,-6,0.5,-6))
+        sq.BackgroundTransparency = 1; sq.Rotation = 45; cornerAbs(sq,2); mkStroke(sq)
+    elseif kind == "bars" then
+        local b1 = mkFrame(UDim2.new(0,14,0,2), UDim2.new(0.5,-7,0.5,-6)); cornerAbs(b1,1)
+        local b2 = mkFrame(UDim2.new(0,10,0,2), UDim2.new(0.5,-5,0.5,-1)); cornerAbs(b2,1)
+        local b3 = mkFrame(UDim2.new(0,6,0,2), UDim2.new(0.5,-3,0.5,4)); cornerAbs(b3,1)
+    elseif kind == "warn" then
+        local tri = mkFrame(UDim2.new(0,14,0,14), UDim2.new(0.5,-7,0.5,-7))
+        tri.BackgroundTransparency = 1; cornerAbs(tri,2); mkStroke(tri)
+        local bang = mkFrame(UDim2.new(0,2,0,6), UDim2.new(0.5,-1,0.5,-5)); cornerAbs(bang,1)
+        local dot = mkFrame(UDim2.new(0,2,0,2), UDim2.new(0.5,-1,0.5,3)); cornerAbs(dot,1)
+    end
+    iconRegistry[holder] = parts
+    return parts
+end
+
+local function paintIcon(holder, active)
+    local parts = iconRegistry[holder]
+    if not parts then return end
+    local target = active and Theme.Accent or Theme.TextDim
+    for _, e in ipairs(parts) do
+        if e.obj and e.obj.Parent then
+            if e.prop == "Color" then pcall(function() e.obj.Color = target end)
+            else pcall(function() e.obj[e.prop] = target end) end
+        end
+    end
+end
+
+-- ==== TABS ====
+local tabs = {}
+local activeTabData = nil
+
+local function createTab(name, i18nKey, subtitleKey, iconKind)
+    local canvas = Instance.new("CanvasGroup")
+    canvas.Size = UDim2.new(1, 0, 1, 0)
+    canvas.BackgroundTransparency = 1
+    canvas.GroupTransparency = 0
+    canvas.Visible = false
+    canvas.Parent = Content
+
+    local page = Instance.new("ScrollingFrame")
+    page.Size = UDim2.new(1, 0, 1, 0)
+    page.BackgroundTransparency = 1
+    page.BorderSizePixel = 0
+    page.CanvasSize = UDim2.new(0, 0, 0, 1200)
+    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    page.ScrollBarThickness = 3
+    page.ScrollBarImageColor3 = Theme.AccentDim
+    page.ScrollBarImageTransparency = 0.4
+    page.Parent = canvas
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 8)
+    layout.Parent = page
+    local pad = Instance.new("UIPadding")
+    pad.PaddingRight = UDim.new(0, 6)
+    pad.PaddingBottom = UDim.new(0, 12)
+    pad.Parent = page
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 38)
+    btn.BackgroundColor3 = Theme.Surface2
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.Parent = NavHolder
+    corner(btn, 0.65)
+
+    local btnStroke = stroke(btn, Theme.Border, 1)
+    btnStroke.Transparency = 1
+
+    local accentPill = Instance.new("Frame")
+    accentPill.Size = UDim2.new(0, 3, 0, 0)
+    accentPill.Position = UDim2.new(0, 0, 0.5, 0)
+    accentPill.AnchorPoint = Vector2.new(0, 0.5)
+    accentPill.BackgroundColor3 = Theme.Accent
+    accentPill.BorderSizePixel = 0
+    accentPill.Parent = btn
+    cornerAbs(accentPill, 2)
+
+    local iconHolder = Instance.new("Frame")
+    iconHolder.Size = UDim2.new(0, 20, 0, 20)
+    iconHolder.Position = UDim2.new(0, 12, 0.5, -10)
+    iconHolder.BackgroundTransparency = 1
+    iconHolder.Parent = btn
+    drawIcon(iconHolder, iconKind)
+
+    local labelLbl = Instance.new("TextLabel")
+    labelLbl.Size = UDim2.new(1, -42, 1, 0)
+    labelLbl.Position = UDim2.new(0, 40, 0, 0)
+    labelLbl.BackgroundTransparency = 1
+    labelLbl.Text = T(i18nKey)
+    labelLbl.TextColor3 = Theme.TextDim
+    labelLbl.TextSize = 11
+    labelLbl.Font = Enum.Font.GothamBold
+    labelLbl.TextXAlignment = Enum.TextXAlignment.Left
+    labelLbl.Parent = btn
+    regLabel(labelLbl, i18nKey)
+
+    local function setActive(active, animate)
+        local info = animate and EASING.Med or TweenInfo.new(0)
+        safeTween(btn, info, {
+            BackgroundTransparency = active and 0 or 1,
+            BackgroundColor3 = active and Theme.Surface3 or Theme.Surface2,
+        })
+        safeTween(btnStroke, info, {
+            Transparency = active and 0.3 or 1,
+            Color = active and Theme.BorderHi or Theme.Border,
+        })
+        safeTween(accentPill, info, {
+            Size = active and UDim2.new(0, 3, 0.6, 0) or UDim2.new(0, 3, 0, 0),
+        })
+        safeTween(labelLbl, info, { TextColor3 = active and Theme.Text or Theme.TextDim })
+        paintIcon(iconHolder, active)
+    end
+
+    local tabData = {
+        Button = btn, Page = page, Canvas = canvas, SetActive = setActive,
+        Name = name, I18nKey = i18nKey, SubtitleKey = subtitleKey or "",
+        Rows = {}, IconHolder = iconHolder, AccentPill = accentPill,
+    }
+
+    btn.MouseEnter:Connect(function()
+        if activeTabData ~= tabData then
+            safeTween(btn, EASING.Fast, { BackgroundTransparency = 0, BackgroundColor3 = Theme.Hover })
+            safeTween(labelLbl, EASING.Fast, { TextColor3 = Theme.Text })
+            if Config.UINavPulse then safeTween(accentPill, EASING.Fast, { Size = UDim2.new(0, 3, 0.35, 0) }) end
+        end
+    end)
+    btn.MouseLeave:Connect(function()
+        if activeTabData ~= tabData then
+            safeTween(btn, EASING.Fast, { BackgroundTransparency = 1 })
+            safeTween(labelLbl, EASING.Fast, { TextColor3 = Theme.TextDim })
+            if Config.UINavPulse then safeTween(accentPill, EASING.Fast, { Size = UDim2.new(0, 3, 0, 0) }) end
+        end
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        if activeTabData == tabData then return end
+        local old = activeTabData
+        activeTabData = tabData
+        setActive(true, true)
+        closeAllPopups()
+        if old then
+            old.SetActive(false, true)
+            safeTween(old.Canvas, EASING.Med, { GroupTransparency = 1 })
+            task.delay(0.22, function()
+                if activeTabData ~= old then old.Canvas.Visible = false end
+            end)
+        end
+        canvas.Visible = true
+        canvas.GroupTransparency = 1
+        page.Position = UDim2.new(0, 0, 0, 10)
+        safeTween(canvas, EASING.Slow, { GroupTransparency = 0 })
+        safeTween(page, EASING.Slow, { Position = UDim2.new(0, 0, 0, 0) })
+        PageTitle.Text = T(i18nKey)
+        PageSub.Text = subtitleKey ~= "" and T(subtitleKey) or ""
+    end)
+
+    tabs[name] = tabData
+    if not activeTabData then
+        activeTabData = tabData
+        canvas.Visible = true
+        canvas.GroupTransparency = 0
+        setActive(true, false)
+        PageTitle.Text = T(i18nKey)
+        PageSub.Text = subtitleKey ~= "" and T(subtitleKey) or ""
+    end
+
+    return canvas, page, tabData
+end
+
+-- ==== UI COMPONENTS ====
+local function addSection(page, textKey, tabData)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(1, 0, 0, 30)
+    holder.BackgroundTransparency = 1
+    holder.Parent = page
+    holder:SetAttribute("SearchText", T(textKey):lower())
+    if tabData then table.insert(tabData.Rows, holder) end
+
+    local bullet = Instance.new("Frame")
+    bullet.Size = UDim2.new(0, 6, 0, 6)
+    bullet.Position = UDim2.new(0, 4, 0.5, -3)
+    bullet.BackgroundColor3 = Theme.Accent
+    bullet.BorderSizePixel = 0
+    bullet.Parent = holder
+    cornerAbs(bullet, 3)
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -60, 1, 0)
+    lbl.Position = UDim2.new(0, 20, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = string.upper(T(textKey))
+    lbl.TextColor3 = Theme.TextDim
+    lbl.TextSize = 10
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = holder
+    regLabel(lbl, textKey)
+    lbl.Text = string.upper(T(textKey))
+
+    local chev = Instance.new("TextLabel")
+    chev.Size = UDim2.new(0, 20, 1, 0)
+    chev.Position = UDim2.new(1, -22, 0, 0)
+    chev.BackgroundTransparency = 1
+    chev.Text = "▾"
+    chev.TextColor3 = Theme.TextMute
+    chev.TextSize = 10
+    chev.Font = Enum.Font.Code
+    chev.Parent = holder
+
+    local click = Instance.new("TextButton")
+    click.Size = UDim2.new(1, 0, 1, 0)
+    click.BackgroundTransparency = 1
+    click.Text = ""
+    click.Parent = holder
+
+    click.MouseButton1Click:Connect(function()
+        State.CollapsedSections[textKey] = not State.CollapsedSections[textKey]
+        local hide = State.CollapsedSections[textKey]
+        chev.Text = hide and "▸" or "▾"
+        for _, row in ipairs(tabData and tabData.Rows or {}) do
+            if row:GetAttribute("SectionOwner") == textKey then
+                row.Visible = not hide
+            end
+        end
+    end)
+
+    regSection(bullet, lbl)
+
+    return function(child)
+        if tabData then table.insert(tabData.Rows, child) end
+        child:SetAttribute("SectionOwner", textKey)
+        child.Visible = not State.CollapsedSections[textKey]
+    end
+end
+
+local function addToggle(page, textKey, default, callback, register, configKey)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 34)
+    f.BackgroundColor3 = Theme.Surface
+    f.BorderSizePixel = 0
+    f.Parent = page
+    f:SetAttribute("SearchText", T(textKey):lower())
+    if register then register(f) end
+    corner(f, 0.65)
+    local fStroke = stroke(f, Theme.Border, 1); fStroke.Transparency = 0.3
+
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, 2, 0, 0)
+    accentBar.Position = UDim2.new(0, 0, 0.5, 0)
+    accentBar.AnchorPoint = Vector2.new(0, 0.5)
+    accentBar.BackgroundColor3 = Theme.Accent
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = f
+    cornerAbs(accentBar, 1)
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -70, 1, 0)
+    lbl.Position = UDim2.new(0, 14, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = T(textKey)
+    lbl.TextColor3 = Theme.Text
+    lbl.TextSize = 11
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextTruncate = Enum.TextTruncate.AtEnd
+    lbl.Parent = f
+    regLabel(lbl, textKey)
+
+    local val = default
+    local pill = Instance.new("Frame")
+    pill.Size = UDim2.new(0, 34, 0, 18)
+    pill.Position = UDim2.new(1, -46, 0.5, -9)
+    pill.BackgroundColor3 = val and Theme.Accent or Theme.Surface3
+    pill.BorderSizePixel = 0
+    pill.Parent = f
+    cornerAbs(pill, 9)
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 14, 0, 14)
+    knob.Position = val and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+    knob.BackgroundColor3 = val and Color3.fromRGB(18,20,24) or Theme.TextDim
+    knob.BorderSizePixel = 0
+    knob.Parent = pill
+    cornerAbs(knob, 7)
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundTransparency = 1
+    btn.Text = ""
+    btn.Parent = f
+
+    local function paint(state)
+        safeTween(pill, EASING.Med, { BackgroundColor3 = state and Theme.Accent or Theme.Surface3 })
+        safeTween(knob, EASING.Spring, {
+            Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7),
+        })
+        safeTween(knob, EASING.Med, {
+            BackgroundColor3 = state and Color3.fromRGB(18,20,24) or Theme.TextDim,
+        })
+        safeTween(accentBar, EASING.Med, {
+            Size = state and UDim2.new(0, 2, 0.6, 0) or UDim2.new(0, 2, 0, 0),
+        })
+    end
+
+    f.MouseEnter:Connect(function()
+        safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Hover })
+        safeTween(fStroke, EASING.Fast, { Transparency = 0.1 })
+    end)
+    f.MouseLeave:Connect(function()
+        safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Surface })
+        safeTween(fStroke, EASING.Fast, { Transparency = 0.3 })
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        val = not val
+        paint(val)
+        if configKey then Config[configKey] = val end
+        callback(val)
+        if configKey then NotifyToggle(T(textKey), val) end
+    end)
+
+    regToggle(pill, knob, accentBar, function() return val end)
+    return f, function(v) val = v; paint(v) end
+end
+
+local function addSlider(page, textKey, min, max, default, callback, register)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 50)
+    f.BackgroundColor3 = Theme.Surface
+    f.BorderSizePixel = 0
+    f.Parent = page
+    f:SetAttribute("SearchText", T(textKey):lower())
+    if register then register(f) end
+    corner(f, 0.65)
+    local fStroke = stroke(f, Theme.Border, 1); fStroke.Transparency = 0.3
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -110, 0, 18)
+    lbl.Position = UDim2.new(0, 14, 0, 6)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = T(textKey)
+    lbl.TextColor3 = Theme.Text
+    lbl.TextSize = 11
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextTruncate = Enum.TextTruncate.AtEnd
+    lbl.Parent = f
+    regLabel(lbl, textKey)
+
+    local valLbl = Instance.new("TextLabel")
+    valLbl.Size = UDim2.new(0, 80, 0, 18)
+    valLbl.Position = UDim2.new(1, -92, 0, 6)
+    valLbl.BackgroundTransparency = 1
+    valLbl.Text = tostring(default)
+    valLbl.TextColor3 = Theme.Accent
+    valLbl.TextSize = 11
+    valLbl.Font = Enum.Font.Code
+    valLbl.TextXAlignment = Enum.TextXAlignment.Right
+    valLbl.Parent = f
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, -28, 0, 8)
+    bar.Position = UDim2.new(0, 14, 0, 30)
+    bar.BackgroundColor3 = Theme.Surface3
+    bar.BorderSizePixel = 0
+    bar.Parent = f
+    cornerAbs(bar, 4)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+    fill.BackgroundColor3 = Theme.Accent
+    fill.BorderSizePixel = 0
+    fill.Parent = bar
+    cornerAbs(fill, 4)
+
+    local fillGrad = Instance.new("UIGradient")
+    fillGrad.Color = ColorSequence.new(Theme.AccentDim, Theme.Accent)
+    fillGrad.Parent = fill
+
+    local handle = Instance.new("Frame")
+    handle.Size = UDim2.new(0, 12, 0, 12)
+    handle.AnchorPoint = Vector2.new(0.5, 0.5)
+    handle.Position = UDim2.new((default - min) / (max - min), 0, 0.5, 0)
+    handle.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    handle.BorderSizePixel = 0
+    handle.ZIndex = 3
+    handle.Parent = bar
+    cornerAbs(handle, 6)
+    local handleStroke = stroke(handle, Theme.Accent, 1.5)
+
+    local dragS = false
+    local function update(input)
+        local pos = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+        local v = math.floor(min + (max - min) * pos + 0.5)
+        fill.Size = UDim2.new(pos, 0, 1, 0)
+        handle.Position = UDim2.new(pos, 0, 0.5, 0)
+        valLbl.Text = tostring(v)
+        callback(v)
+    end
+
+    trackConnection(bar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragS = true; update(input)
+            safeTween(handle, EASING.Fast, { Size = UDim2.new(0, 16, 0, 16) })
+        end
+    end))
+    trackConnection(UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and dragS then
+            dragS = false
+            safeTween(handle, EASING.Fast, { Size = UDim2.new(0, 12, 0, 12) })
+        end
+    end))
+    trackConnection(UserInputService.InputChanged:Connect(function(input)
+        if dragS and input.UserInputType == Enum.UserInputType.MouseMovement then update(input) end
+    end))
+
+    f.MouseEnter:Connect(function()
+        if not dragS then
+            safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Hover })
+            safeTween(fStroke, EASING.Fast, { Transparency = 0.1 })
+        end
+    end)
+    f.MouseLeave:Connect(function()
+        if not dragS then
+            safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Surface })
+            safeTween(fStroke, EASING.Fast, { Transparency = 0.3 })
+        end
+    end)
+
+    regSlider(fill, handleStroke)
+    regAccentLabel(valLbl)
+end
+
+local function addInput(page, textKey, default, callback, register)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 50)
+    f.BackgroundColor3 = Theme.Surface
+    f.BorderSizePixel = 0
+    f.Parent = page
+    f:SetAttribute("SearchText", T(textKey):lower())
+    if register then register(f) end
+    corner(f, 0.65)
+    stroke(f, Theme.Border, 1).Transparency = 0.3
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -30, 0, 14)
+    lbl.Position = UDim2.new(0, 14, 0, 6)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = T(textKey)
+    lbl.TextColor3 = Theme.TextDim
+    lbl.TextSize = 10
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = f
+    regLabel(lbl, textKey)
+
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(1, -28, 0, 22)
+    box.Position = UDim2.new(0, 14, 0, 22)
+    box.BackgroundColor3 = Theme.Surface3
+    box.BorderSizePixel = 0
+    box.Text = tostring(default)
+    box.TextColor3 = Theme.Text
+    box.PlaceholderText = "..."
+    box.PlaceholderColor3 = Theme.TextMute
+    box.TextSize = 11
+    box.Font = Enum.Font.Gotham
+    box.TextXAlignment = Enum.TextXAlignment.Left
+    box.ClearTextOnFocus = false
+    box.Parent = f
+    corner(box, 0.5)
+
+    local boxPad = Instance.new("UIPadding")
+    boxPad.PaddingLeft = UDim.new(0, 8)
+    boxPad.PaddingRight = UDim.new(0, 8)
+    boxPad.Parent = box
+
+    box.FocusLost:Connect(function() callback(box.Text) end)
+    f.MouseEnter:Connect(function() safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Hover }) end)
+    f.MouseLeave:Connect(function() safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Surface }) end)
+    return f, box
+end
+
+local function addDropdown(page, textKey, options, default, callback, register)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 52)
+    f.BackgroundColor3 = Theme.Surface
+    f.BorderSizePixel = 0
+    f.Parent = page
+    f:SetAttribute("SearchText", T(textKey):lower())
+    if register then register(f) end
+    corner(f, 0.65)
+    stroke(f, Theme.Border, 1).Transparency = 0.3
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -30, 0, 14)
+    lbl.Position = UDim2.new(0, 14, 0, 6)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = T(textKey)
+    lbl.TextColor3 = Theme.TextDim
+    lbl.TextSize = 10
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = f
+    regLabel(lbl, textKey)
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -28, 0, 24)
+    btn.Position = UDim2.new(0, 14, 0, 22)
+    btn.BackgroundColor3 = Theme.Surface3
+    btn.Text = "  " .. tostring(default)
+    btn.TextColor3 = Theme.Text
+    btn.TextSize = 11
+    btn.Font = Enum.Font.Gotham
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.TextTruncate = Enum.TextTruncate.AtEnd
+    btn.AutoButtonColor = false
+    btn.Parent = f
+    corner(btn, 0.5)
+
+    local chev = Instance.new("TextLabel")
+    chev.Size = UDim2.new(0, 20, 1, 0)
+    chev.Position = UDim2.new(1, -22, 0, 0)
+    chev.BackgroundTransparency = 1
+    chev.Text = "▾"
+    chev.TextColor3 = Theme.TextDim
+    chev.TextSize = 11
+    chev.Font = Enum.Font.Code
+    chev.Parent = btn
+
+    local currentPopup = nil
+    btn.MouseEnter:Connect(function() safeTween(btn, EASING.Fast, { BackgroundColor3 = Theme.Hover }) end)
+    btn.MouseLeave:Connect(function() safeTween(btn, EASING.Fast, { BackgroundColor3 = Theme.Surface3 }) end)
+
+    local function closeThis()
+        if currentPopup and currentPopup.Parent then
+            local p = currentPopup
+            safeTween(p, EASING.Fast, {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(p.Size.X.Scale, p.Size.X.Offset, 0, 0),
+            })
+            task.delay(0.14, function() if p and p.Parent then p:Destroy() end end)
+            for i = #openPopups, 1, -1 do
+                if openPopups[i] == p then table.remove(openPopups, i) end
+            end
+        end
+        currentPopup = nil
+        chev.Text = "▾"
+        if #openPopups == 0 then ClickCatcher.Visible = false end
+    end
+
+    local function open()
+        closeAllPopups()
+        local btnAbs = btn.AbsolutePosition
+        local btnSize = btn.AbsoluteSize
+        local listH = #options * 26 + 8
+        local targetW = btnSize.X
+
+        local pop = Instance.new("Frame")
+        pop.Size = UDim2.new(0, targetW, 0, 0)
+        pop.Position = UDim2.new(0, btnAbs.X, 0, btnAbs.Y + btnSize.Y + 4)
+        pop.BackgroundColor3 = Theme.Surface3
+        pop.BackgroundTransparency = 1
+        pop.BorderSizePixel = 0
+        pop.ClipsDescendants = true
+        pop.ZIndex = 1000
+        pop.Parent = PopupLayer
+        corner(pop, 0.65)
+        local popStroke = stroke(pop, Theme.BorderHi, 1); popStroke.Transparency = 1
+
+        local layout = Instance.new("UIListLayout")
+        layout.Padding = UDim.new(0, 1)
+        layout.Parent = pop
+        local popPad = Instance.new("UIPadding")
+        popPad.PaddingTop = UDim.new(0, 4)
+        popPad.PaddingBottom = UDim.new(0, 4)
+        popPad.PaddingLeft = UDim.new(0, 4)
+        popPad.PaddingRight = UDim.new(0, 4)
+        popPad.Parent = pop
+
+        local currentDefault = default
+        for _, opt in ipairs(options) do
+            local optBtn = Instance.new("TextButton")
+            optBtn.Size = UDim2.new(1, 0, 0, 24)
+            optBtn.BackgroundColor3 = Theme.Accent
+            optBtn.BackgroundTransparency = 1
+            optBtn.Text = "  " .. opt
+            optBtn.TextColor3 = opt == currentDefault and Theme.Accent or Theme.TextDim
+            optBtn.TextSize = 11
+            optBtn.Font = Enum.Font.Gotham
+            optBtn.TextXAlignment = Enum.TextXAlignment.Left
+            optBtn.AutoButtonColor = false
+            optBtn.ZIndex = 1001
+            optBtn.Parent = pop
+            corner(optBtn, 0.4)
+
+            optBtn.MouseEnter:Connect(function()
+                safeTween(optBtn, EASING.Fast, { BackgroundTransparency = 0.85, TextColor3 = Theme.Text })
+            end)
+            optBtn.MouseLeave:Connect(function()
+                safeTween(optBtn, EASING.Fast, { BackgroundTransparency = 1, TextColor3 = opt == currentDefault and Theme.Accent or Theme.TextDim })
+            end)
+            optBtn.MouseButton1Click:Connect(function()
+                btn.Text = "  " .. opt
+                default = opt
+                currentDefault = opt
+                callback(opt)
+                closeThis()
+            end)
+        end
+
+        currentPopup = pop
+        table.insert(openPopups, pop)
+        ClickCatcher.Visible = true
+        chev.Text = "▴"
+
+        safeTween(pop, EASING.Med, { Size = UDim2.new(0, targetW, 0, listH), BackgroundTransparency = 0 })
+        safeTween(popStroke, EASING.Med, { Transparency = 0 })
+    end
+
+    btn.MouseButton1Click:Connect(function()
+        if currentPopup then closeThis() else open() end
+    end)
+    f.MouseEnter:Connect(function() safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Hover }) end)
+    f.MouseLeave:Connect(function() safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Surface }) end)
+end
+
+local function addButton(page, textKey, color, callback, register)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1, 0, 0, 34)
+    local initialColor = resolveColor(color) or Theme.Surface
+    b.BackgroundColor3 = initialColor
+    b.Text = T(textKey)
+    b.TextColor3 = color and Color3.fromRGB(255,255,255) or Theme.Text
+    b.TextSize = 11
+    b.Font = Enum.Font.GothamBold
+    b.AutoButtonColor = false
+    b.Parent = page
+    b:SetAttribute("SearchText", T(textKey):lower())
+    if register then register(b) end
+    corner(b, 0.65)
+    regLabel(b, textKey)
+
+    local function currentBase()
+        return resolveColor(color) or Theme.Surface
+    end
+
+    b.MouseEnter:Connect(function() safeTween(b, EASING.Fast, { BackgroundColor3 = currentBase():Lerp(Theme.Text, 0.12) }) end)
+    b.MouseLeave:Connect(function() safeTween(b, EASING.Fast, { BackgroundColor3 = currentBase(), Size = UDim2.new(1, 0, 0, 34) }) end)
+    b.MouseButton1Down:Connect(function() safeTween(b, TweenInfo.new(0.06), { Size = UDim2.new(0.98, 0, 0, 34) }) end)
+    b.MouseButton1Up:Connect(function() safeTween(b, EASING.Spring, { Size = UDim2.new(1, 0, 0, 34) }) end)
+    b.MouseButton1Click:Connect(callback)
+
+    regButton(b, currentBase)
+    return b
+end
+
+-- ==== COLOR WHEEL ====
+local colorHistory = {}
+local function pushColorHistory(c)
+    for i = #colorHistory, 1, -1 do
+        if colorHistory[i] == c then table.remove(colorHistory, i) end
+    end
+    table.insert(colorHistory, 1, c)
+    while #colorHistory > 8 do table.remove(colorHistory) end
+end
+
+local function toHex(c)
+    local r = math.floor(c.R * 255 + 0.5)
+    local g = math.floor(c.G * 255 + 0.5)
+    local b = math.floor(c.B * 255 + 0.5)
+    return string.format("#%02X%02X%02X", r, g, b)
+end
+
+local function fromHex(s)
+    s = s:gsub("#", "")
+    if #s ~= 6 then return nil end
+    local r = tonumber(s:sub(1,2), 16)
+    local g = tonumber(s:sub(3,4), 16)
+    local b = tonumber(s:sub(5,6), 16)
+    if not (r and g and b) then return nil end
+    return Color3.fromRGB(r, g, b)
+end
+
+local function openColorWheel(anchorAbs, currentColor, onPick)
+    closeAllPopups()
+    local pw, ph = 300, 340
+    local pop = Instance.new("Frame")
+    pop.Size = UDim2.new(0, pw, 0, 0)
+    pop.Position = UDim2.new(0, anchorAbs.X, 0, anchorAbs.Y + 4)
+    pop.BackgroundColor3 = Theme.Surface
+    pop.BackgroundTransparency = 1
+    pop.BorderSizePixel = 0
+    pop.ClipsDescendants = true
+    pop.ZIndex = 1000
+    pop.Parent = PopupLayer
+    corner(pop, 0.8)
+    local popStroke = stroke(pop, Theme.BorderHi, 1); popStroke.Transparency = 1
+
+    local h, s, v = currentColor:ToHSV()
+
+    local preview = Instance.new("Frame")
+    preview.Size = UDim2.new(0, 40, 0, 26)
+    preview.Position = UDim2.new(0, 10, 0, 10)
+    preview.BackgroundColor3 = currentColor
+    preview.BorderSizePixel = 0
+    preview.ZIndex = 1001
+    preview.Parent = pop
+    corner(preview, 0.5)
+    stroke(preview, Theme.TextMute, 1)
+
+    local hexBox = Instance.new("TextBox")
+    hexBox.Size = UDim2.new(0, 100, 0, 26)
+    hexBox.Position = UDim2.new(0, 56, 0, 10)
+    hexBox.BackgroundColor3 = Theme.Surface3
+    hexBox.Text = toHex(currentColor)
+    hexBox.TextColor3 = Theme.Text
+    hexBox.TextSize = 12
+    hexBox.Font = Enum.Font.Code
+    hexBox.TextXAlignment = Enum.TextXAlignment.Center
+    hexBox.ClearTextOnFocus = false
+    hexBox.ZIndex = 1001
+    hexBox.Parent = pop
+    corner(hexBox, 0.5)
+
+    local applyBtn = Instance.new("TextButton")
+    applyBtn.Size = UDim2.new(0, 60, 0, 26)
+    applyBtn.Position = UDim2.new(1, -70, 0, 10)
+    applyBtn.BackgroundColor3 = Theme.Accent
+    applyBtn.Text = T("apply")
+    applyBtn.TextColor3 = Color3.fromRGB(255,255,255)
+    applyBtn.TextSize = 11
+    applyBtn.Font = Enum.Font.GothamBold
+    applyBtn.AutoButtonColor = false
+    applyBtn.ZIndex = 1001
+    applyBtn.Parent = pop
+    corner(applyBtn, 0.5)
+
+    -- SV square
+    local svSize = 200
+    local svFrame = Instance.new("Frame")
+    svFrame.Size = UDim2.new(0, svSize, 0, svSize)
+    svFrame.Position = UDim2.new(0, 10, 0, 46)
+    svFrame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    svFrame.BorderSizePixel = 0
+    svFrame.ZIndex = 1001
+    svFrame.Parent = pop
+    corner(svFrame, 0.4)
+
+    -- saturation gradient (white → transparent)
+    local satGrad = Instance.new("Frame")
+    satGrad.Size = UDim2.new(1, 0, 1, 0)
+    satGrad.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    satGrad.BorderSizePixel = 0
+    satGrad.ZIndex = 1002
+    satGrad.Parent = svFrame
+    local satGradGrad = Instance.new("UIGradient")
+    satGradGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 1),
+    })
+    satGradGrad.Parent = satGrad
+
+    -- value gradient (transparent → black)
+    local valGrad = Instance.new("Frame")
+    valGrad.Size = UDim2.new(1, 0, 1, 0)
+    valGrad.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    valGrad.BorderSizePixel = 0
+    valGrad.ZIndex = 1003
+    valGrad.Parent = svFrame
+    local valGradGrad = Instance.new("UIGradient")
+    valGradGrad.Rotation = 90
+    valGradGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1),
+        NumberSequenceKeypoint.new(1, 0),
+    })
+    valGradGrad.Parent = valGrad
+
+    -- cursor
+    local cursor = Instance.new("Frame")
+    cursor.Size = UDim2.new(0, 12, 0, 12)
+    cursor.AnchorPoint = Vector2.new(0.5, 0.5)
+    cursor.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    cursor.BorderSizePixel = 0
+    cursor.ZIndex = 1005
+    cursor.Parent = svFrame
+    cornerAbs(cursor, 6)
+    stroke(cursor, Color3.fromRGB(0,0,0), 1.5)
+    cursor.Position = UDim2.new(s, 0, 1 - v, 0)
+
+    local function setSVColor()
+        svFrame.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
+        local c = Color3.fromHSV(h, s, v)
+        preview.BackgroundColor3 = c
+        hexBox.Text = toHex(c)
+        cursor.Position = UDim2.new(s, 0, 1 - v, 0)
+    end
+    setSVColor()
+
+    local svDragging = false
+    local function svUpdate(input)
+        local relX = math.clamp((input.Position.X - svFrame.AbsolutePosition.X) / svFrame.AbsoluteSize.X, 0, 1)
+        local relY = math.clamp((input.Position.Y - svFrame.AbsolutePosition.Y) / svFrame.AbsoluteSize.Y, 0, 1)
+        s = relX
+        v = 1 - relY
+        setSVColor()
+    end
+
+    svFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            svDragging = true
+            svUpdate(input)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if svDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            svUpdate(input)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then svDragging = false end
+    end)
+
+    -- Hue bar
+    local hueFrame = Instance.new("Frame")
+    hueFrame.Size = UDim2.new(0, 20, 0, svSize)
+    hueFrame.Position = UDim2.new(0, svSize + 20, 0, 46)
+    hueFrame.BackgroundColor3 = Color3.fromRGB(255,0,0)
+    hueFrame.BorderSizePixel = 0
+    hueFrame.ZIndex = 1001
+    hueFrame.Parent = pop
+    corner(hueFrame, 0.4)
+
+    local hueImg = Instance.new("Frame")
+    hueImg.Size = UDim2.new(1, 0, 1, 0)
+    hueImg.BorderSizePixel = 0
+    hueImg.ZIndex = 1002
+    hueImg.Parent = hueFrame
+    local hueGrad = Instance.new("UIGradient")
+    hueGrad.Rotation = 90
+    hueGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255, 0, 255)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 0)),
+    })
+    hueGrad.Parent = hueImg
+
+    local hueCursor = Instance.new("Frame")
+    hueCursor.Size = UDim2.new(1, 4, 0, 6)
+    hueCursor.AnchorPoint = Vector2.new(0.5, 0.5)
+    hueCursor.Position = UDim2.new(0.5, 0, h, 0)
+    hueCursor.BackgroundColor3 = Color3.fromRGB(255,255,255)
+    hueCursor.BorderSizePixel = 0
+    hueCursor.ZIndex = 1005
+    hueCursor.Parent = hueFrame
+    cornerAbs(hueCursor, 3)
+    stroke(hueCursor, Color3.fromRGB(0,0,0), 1.5)
+
+    local hueDragging = false
+    local function hueUpdate(input)
+        local relY = math.clamp((input.Position.Y - hueFrame.AbsolutePosition.Y) / hueFrame.AbsoluteSize.Y, 0, 1)
+        h = relY
+        hueCursor.Position = UDim2.new(0.5, 0, h, 0)
+        setSVColor()
+    end
+    hueFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            hueDragging = true
+            hueUpdate(input)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if hueDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            hueUpdate(input)
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then hueDragging = false end
+    end)
+
+    -- Recent
+    local recentLbl = Instance.new("TextLabel")
+    recentLbl.Size = UDim2.new(1, -20, 0, 16)
+    recentLbl.Position = UDim2.new(0, 10, 0, 254)
+    recentLbl.BackgroundTransparency = 1
+    recentLbl.Text = string.upper(T("recent"))
+    recentLbl.TextColor3 = Theme.TextMute
+    recentLbl.TextSize = 9
+    recentLbl.Font = Enum.Font.GothamBold
+    recentLbl.TextXAlignment = Enum.TextXAlignment.Left
+    recentLbl.ZIndex = 1001
+    recentLbl.Parent = pop
+
+    local recentHolder = Instance.new("Frame")
+    recentHolder.Size = UDim2.new(1, -20, 0, 40)
+    recentHolder.Position = UDim2.new(0, 10, 0, 272)
+    recentHolder.BackgroundColor3 = Theme.Surface2
+    recentHolder.BorderSizePixel = 0
+    recentHolder.ZIndex = 1001
+    recentHolder.Parent = pop
+    corner(recentHolder, 0.5)
+    local recentLayout = Instance.new("UIListLayout")
+    recentLayout.FillDirection = Enum.FillDirection.Horizontal
+    recentLayout.Padding = UDim.new(0, 4)
+    recentLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    recentLayout.Parent = recentHolder
+    local recentPad = Instance.new("UIPadding")
+    recentPad.PaddingLeft = UDim.new(0, 6)
+    recentPad.PaddingTop = UDim.new(0, 5)
+    recentPad.Parent = recentHolder
+
+    for _, c in ipairs(colorHistory) do
+        local sw = Instance.new("TextButton")
+        sw.Size = UDim2.new(0, 28, 0, 28)
+        sw.BackgroundColor3 = c
+        sw.Text = ""
+        sw.AutoButtonColor = false
+        sw.ZIndex = 1001
+        sw.Parent = recentHolder
+        cornerAbs(sw, 5)
+        stroke(sw, Theme.Border, 1)
+        sw.MouseButton1Click:Connect(function()
+            local hh, ss, vv = c:ToHSV()
+            h = hh; s = ss; v = vv
+            setSVColor()
+            hueCursor.Position = UDim2.new(0.5, 0, h, 0)
+        end)
+    end
+    if #colorHistory == 0 then
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, -12, 1, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = T("noRecent")
+        lbl.TextColor3 = Theme.TextMute
+        lbl.TextSize = 10
+        lbl.Font = Enum.Font.Gotham
+        lbl.ZIndex = 1001
+        lbl.Parent = recentHolder
+    end
+
+    applyBtn.MouseEnter:Connect(function() safeTween(applyBtn, EASING.Fast, { BackgroundColor3 = Theme.AccentHi }) end)
+    applyBtn.MouseLeave:Connect(function() safeTween(applyBtn, EASING.Fast, { BackgroundColor3 = Theme.Accent }) end)
+    applyBtn.MouseButton1Click:Connect(function()
+        local hex = hexBox.Text
+        if hex:sub(1,1) ~= "#" then hex = "#" .. hex end
+        local parsed = fromHex(hex)
+        if parsed then
+            local hh, ss, vv = parsed:ToHSV()
+            h = hh; s = ss; v = vv
+            setSVColor()
+        end
+        local c = preview.BackgroundColor3
+        pushColorHistory(c)
+        onPick(c)
+        safeTween(pop, EASING.Fast, { BackgroundTransparency = 1, Size = UDim2.new(0, pw, 0, 0) })
+        task.delay(0.14, function() if pop and pop.Parent then pop:Destroy() end end)
+        for i = #openPopups, 1, -1 do
+            if openPopups[i] == pop then table.remove(openPopups, i) end
+        end
+        if #openPopups == 0 then ClickCatcher.Visible = false end
+    end)
+
+    hexBox.FocusLost:Connect(function()
+        local hex = hexBox.Text
+        if hex:sub(1,1) ~= "#" then hex = "#" .. hex end
+        local parsed = fromHex(hex)
+        if parsed then
+            local hh, ss, vv = parsed:ToHSV()
+            h = hh; s = ss; v = vv
+            setSVColor()
+            hueCursor.Position = UDim2.new(0.5, 0, h, 0)
+        end
+    end)
+
+    table.insert(openPopups, pop)
+    ClickCatcher.Visible = true
+    safeTween(pop, EASING.Med, { Size = UDim2.new(0, pw, 0, ph), BackgroundTransparency = 0 })
+    safeTween(popStroke, EASING.Med, { Transparency = 0 })
+end
+
+local function addColorPicker(page, textKey, default, callback, register)
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(1, 0, 0, 34)
+    f.BackgroundColor3 = Theme.Surface
+    f.BorderSizePixel = 0
+    f.Parent = page
+    f:SetAttribute("SearchText", T(textKey):lower())
+    if register then register(f) end
+    corner(f, 0.65)
+    local fStroke = stroke(f, Theme.Border, 1); fStroke.Transparency = 0.3
+
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -80, 1, 0)
+    lbl.Position = UDim2.new(0, 14, 0, 0)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = T(textKey)
+    lbl.TextColor3 = Theme.Text
+    lbl.TextSize = 11
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.TextTruncate = Enum.TextTruncate.AtEnd
+    lbl.Parent = f
+    regLabel(lbl, textKey)
+
+    local currentColor = default
+    local swatch = Instance.new("TextButton")
+    swatch.Size = UDim2.new(0, 52, 0, 22)
+    swatch.Position = UDim2.new(1, -60, 0.5, -11)
+    swatch.BackgroundColor3 = currentColor
+    swatch.Text = ""
+    swatch.AutoButtonColor = false
+    swatch.Parent = f
+    cornerAbs(swatch, 5)
+    stroke(swatch, Theme.BorderHi, 1)
+
+    f.MouseEnter:Connect(function()
+        safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Hover })
+        safeTween(fStroke, EASING.Fast, { Transparency = 0.1 })
+    end)
+    f.MouseLeave:Connect(function()
+        safeTween(f, EASING.Fast, { BackgroundColor3 = Theme.Surface })
+        safeTween(fStroke, EASING.Fast, { Transparency = 0.3 })
+    end)
+
+    swatch.MouseButton1Click:Connect(function()
+        local abs = swatch.AbsolutePosition
+        openColorWheel(abs, currentColor, function(c)
+            currentColor = c
+            swatch.BackgroundColor3 = c
+            callback(c)
+        end)
+    end)
+
+    return f, function(v) currentColor = v; swatch.BackgroundColor3 = v end
+end
+
+-- ==== TABS INSTANTIATION ====
+local combatCanvas, combatPage, combatTab = createTab("Combat", "combat", "silentAim", "swords")
+local visualCanvas, visualPage, visualTab = createTab("Visual", "visual", "esp", "eye")
+local uiCanvas, uiPage, uiTab             = createTab("Interface", "interface", "theme", "diamond")
+local configCanvas, configPage, configTab = createTab("Config", "config", "configTitle", "bars")
+local miscCanvas, miscPage, miscTab       = createTab("System", "system", "perf", "warn")
+
+-- helper to add master toggle row at top of each tab
+local function addMasterToggle(page, i18nKey, configKey, tabData)
+    local section = addSection(page, i18nKey, tabData)
+    addToggle(page, i18nKey, Config[configKey], function(v) end, section, configKey)
+end
+-- ==== TABS CONTENT ====
+
+-- helper: thêm master toggle đầu tab
+local function addMasterToggle(page, labelKey, configKey, tabData, onToggle)
+    local reg = addSection(page, labelKey, tabData)
+    local _, setFn = addToggle(page, labelKey, Config[configKey], function(v)
+        Config[configKey] = v
+        if onToggle then onToggle(v) end
+    end, reg)
+    table.insert(State.MasterToggleRefs, {configKey = configKey, setFn = setFn, page = page, section = reg})
+end
+
+-- ===== COMBAT =====
+addMasterToggle(combatPage, "silentAim", "MasterSilentAim", combatTab)
+local cSec1 = addSection(combatPage, "silentAim", combatTab)
+addToggle(combatPage, "prediction", Config.PredictionEnabled, function(v) Config.PredictionEnabled = v end, cSec1)
+addToggle(combatPage, "ballistic", Config.BallisticCompensation, function(v) Config.BallisticCompensation = v end, cSec1)
+addToggle(combatPage, "teamCheck", Config.TeamCheck, function(v) Config.TeamCheck = v end, cSec1)
+addToggle(combatPage, "drawFov", Config.DrawFOV, function(v) Config.DrawFOV = v end, cSec1)
+addDropdown(combatPage, "targetSel", {"Closest Center", "Closest Distance", "Closest FOV"}, Config.TargetSelection, function(v) Config.TargetSelection = v end, cSec1)
+addSlider(combatPage, "fovRadius", 100, 1500, Config.FOVRadius, function(v) Config.FOVRadius = v end, cSec1)
+addSlider(combatPage, "maxDist", 1000, 200000, Config.MaxDistance, function(v) Config.MaxDistance = v end, cSec1)
+addSlider(combatPage, "targetHold", 50, 500, math.floor(Config.TargetHoldTime * 100), function(v) Config.TargetHoldTime = v / 100 end, cSec1)
+
+addMasterToggle(combatPage, "tracers", "MasterTracer", combatTab)
+local cSec2 = addSection(combatPage, "tracers", combatTab)
+addDropdown(combatPage, "style", {"Beam","Neon","Glow Line","Lightning","Pulse","Comet","Gradient","Rainbow","Projectile"}, Config.TracerStyle, function(v) Config.TracerStyle = v end, cSec2)
+addColorPicker(combatPage, "colorA", Config.TracerColorA, function(c) Config.TracerColorA = c end, cSec2)
+addColorPicker(combatPage, "colorB", Config.TracerColorB, function(c) Config.TracerColorB = c end, cSec2)
+addDropdown(combatPage, "target", {"Local Only","Everyone"}, Config.TracerTarget, function(v) Config.TracerTarget = v end, cSec2)
+addSlider(combatPage, "lifetime", 1, 30, math.floor(Config.TracerLifetime * 10), function(v) Config.TracerLifetime = v / 10 end, cSec2)
+addSlider(combatPage, "thickness", 5, 60, math.floor(Config.TracerThickness * 10), function(v) Config.TracerThickness = v / 10 end, cSec2)
+addSlider(combatPage, "maxTracers", 5, 60, Config.MaxTracers, function(v) Config.MaxTracers = v end, cSec2)
+addSlider(combatPage, "jitter", 1, 20, Config.TracerJitter, function(v) Config.TracerJitter = v end, cSec2)
+addSlider(combatPage, "rbSpeed", 1, 60, math.floor(Config.TracerRainbowSpeed * 10), function(v) Config.TracerRainbowSpeed = v / 10 end, cSec2)
+addToggle(combatPage, "afterglow", Config.TracerAfterglow, function(v) Config.TracerAfterglow = v end, cSec2)
+addToggle(combatPage, "tipSpark", Config.TracerTipSpark, function(v) Config.TracerTipSpark = v end, cSec2)
+
+addMasterToggle(combatPage, "hitbox", "MasterHitbox", combatTab, function(v)
+    if not v then
+        for part, orig in pairs(State.OriginalSizes) do
+            if part and part.Parent then part.Size = orig end
+        end
+        table.clear(State.OriginalSizes)
+    end
+end)
+local cSec3 = addSection(combatPage, "hitbox", combatTab)
+addToggle(combatPage, "smartHitbox", Config.SmartHitbox, function(v) Config.SmartHitbox = v end, cSec3)
+addToggle(combatPage, "hitboxDebug", Config.HitboxDebug, function(v) Config.HitboxDebug = v end, cSec3)
+addSlider(combatPage, "fuselageMul", 10, 500, math.floor(Config.HitboxFuselageMul * 10), function(v) Config.HitboxFuselageMul = v / 10 end, cSec3)
+addSlider(combatPage, "wingMul", 10, 500, math.floor(Config.HitboxWingMul * 10), function(v) Config.HitboxWingMul = v / 10 end, cSec3)
+addColorPicker(combatPage, "healthHigh", Config.HealthHigh, function(c) Config.HealthHigh = c end, cSec3)
+addColorPicker(combatPage, "healthMid", Config.HealthMid, function(c) Config.HealthMid = c end, cSec3)
+addColorPicker(combatPage, "healthLow", Config.HealthLow, function(c) Config.HealthLow = c end, cSec3)
+
+-- ===== VISUAL =====
+addMasterToggle(visualPage, "esp", "MasterESP", visualTab)
+local vSec1 = addSection(visualPage, "esp", visualTab)
+addToggle(visualPage, "box", Config.ESPBox, function(v) Config.ESPBox = v end, vSec1)
+addToggle(visualPage, "corners", Config.ESPCorner, function(v) Config.ESPCorner = v end, vSec1)
+addToggle(visualPage, "name", Config.ESPName, function(v) Config.ESPName = v end, vSec1)
+addToggle(visualPage, "nameUpper", Config.ESPNameUpper, function(v) Config.ESPNameUpper = v end, vSec1)
+addToggle(visualPage, "distance", Config.ESPDistance, function(v) Config.ESPDistance = v end, vSec1)
+addToggle(visualPage, "healthBar", Config.ESPHealthBar, function(v) Config.ESPHealthBar = v end, vSec1)
+addToggle(visualPage, "healthHoriz", Config.ESPHealthHorizontal, function(v) Config.ESPHealthHorizontal = v end, vSec1)
+addToggle(visualPage, "healthPulse", Config.ESPHealthPulse, function(v) Config.ESPHealthPulse = v end, vSec1)
+addToggle(visualPage, "skeleton", Config.ESPSkeleton, function(v) Config.ESPSkeleton = v end, vSec1)
+addDropdown(visualPage, "skeletonStyle", {"Capsule","Line"}, Config.ESPSkeletonStyle, function(v) Config.ESPSkeletonStyle = v end, vSec1)
+addToggle(visualPage, "offscreen", Config.ESPOffscreen, function(v) Config.ESPOffscreen = v end, vSec1)
+addToggle(visualPage, "bigArrows", Config.ESPOffscreenBig, function(v) Config.ESPOffscreenBig = v end, vSec1)
+addToggle(visualPage, "arrowGlow", Config.ESPOffscreenGlow, function(v) Config.ESPOffscreenGlow = v end, vSec1)
+addToggle(visualPage, "arrowDist", Config.ESPOffscreenShowDistance, function(v) Config.ESPOffscreenShowDistance = v end, vSec1)
+addToggle(visualPage, "textOutline", Config.ESPOutline, function(v) Config.ESPOutline = v end, vSec1)
+addToggle(visualPage, "fovLimit", Config.ESPFovOnly, function(v) Config.ESPFovOnly = v end, vSec1)
+addColorPicker(visualPage, "espColor", Config.ESPColor, function(c) Config.ESPColor = c end, vSec1)
+addSlider(visualPage, "boxThickness", 5, 40, math.floor(Config.ESPBoxThickness * 10), function(v) Config.ESPBoxThickness = v / 10 end, vSec1)
+addSlider(visualPage, "minDist", 0, 3000, Config.ESPMinDistance, function(v) Config.ESPMinDistance = v end, vSec1)
+addSlider(visualPage, "maxDist2", 500, 20000, Config.ESPMaxDistance, function(v) Config.ESPMaxDistance = v end, vSec1)
+
+addMasterToggle(visualPage, "radar", "MasterRadar", visualTab)
+local vSec2 = addSection(visualPage, "radar", visualTab)
+addDropdown(visualPage, "radarShape", {"Circle","Square"}, Config.RadarShape, function(v) Config.RadarShape = v end, vSec2)
+addToggle(visualPage, "blips", Config.RadarShowBlips, function(v) Config.RadarShowBlips = v end, vSec2)
+addToggle(visualPage, "selfMarker", Config.RadarShowSelf, function(v) Config.RadarShowSelf = v end, vSec2)
+addToggle(visualPage, "heading", Config.RadarShowHeading, function(v) Config.RadarShowHeading = v end, vSec2)
+addToggle(visualPage, "cardinals", Config.RadarShowCardinals, function(v) Config.RadarShowCardinals = v end, vSec2)
+addToggle(visualPage, "rangeText", Config.RadarShowRangeText, function(v) Config.RadarShowRangeText = v end, vSec2)
+addToggle(visualPage, "altOffset", Config.RadarShowAltitude, function(v) Config.RadarShowAltitude = v end, vSec2)
+addToggle(visualPage, "dirCones", Config.RadarShowCones, function(v) Config.RadarShowCones = v end, vSec2)
+addToggle(visualPage, "blipPulse", Config.RadarShowPulse, function(v) Config.RadarShowPulse = v end, vSec2)
+addColorPicker(visualPage, "blipColor", Config.RadarBlipColor, function(c) Config.RadarBlipColor = c end, vSec2)
+addColorPicker(visualPage, "radarBg", Config.RadarBgColor, function(c) Config.RadarBgColor = c end, vSec2)
+addSlider(visualPage, "radarSize", 100, 320, Config.RadarSize, function(v) Config.RadarSize = v end, vSec2)
+addSlider(visualPage, "radarRange", 500, 10000, Config.RadarRange, function(v) Config.RadarRange = v end, vSec2)
+addSlider(visualPage, "radarX", 0, 500, Config.RadarPosX, function(v) Config.RadarPosX = v end, vSec2)
+addSlider(visualPage, "radarY", 0, 500, Config.RadarPosY, function(v) Config.RadarPosY = v end, vSec2)
+
+addMasterToggle(visualPage, "dogfight", "MasterDogfight", visualTab)
+local vSec3 = addSection(visualPage, "dogfight", visualTab)
+addToggle(visualPage, "showBanner", Config.DogfightShowText, function(v) Config.DogfightShowText = v end, vSec3)
+addToggle(visualPage, "showBorder", Config.DogfightShowBorder, function(v) Config.DogfightShowBorder = v end, vSec3)
+addToggle(visualPage, "showArrows", Config.DogfightShowArrow, function(v) Config.DogfightShowArrow = v end, vSec3)
+addColorPicker(visualPage, "warnColor", Config.DogfightColor, function(c) Config.DogfightColor = c end, vSec3)
+addSlider(visualPage, "detectionRange", 500, 8000, Config.DogfightRange, function(v) Config.DogfightRange = v end, vSec3)
+addSlider(visualPage, "altTolerance", 100, 2000, Config.DogfightAltTolerance, function(v) Config.DogfightAltTolerance = v end, vSec3)
+addSlider(visualPage, "headingThresh", 30, 95, math.floor(Config.DogfightDotThreshold * 100), function(v) Config.DogfightDotThreshold = v / 100 end, vSec3)
+addSlider(visualPage, "ttiMax", 1, 15, Config.DogfightTTI, function(v) Config.DogfightTTI = v end, vSec3)
+addSlider(visualPage, "minSpeed", 0, 400, Config.DogfightMinSpeed, function(v) Config.DogfightMinSpeed = v end, vSec3)
+addSlider(visualPage, "flashSpeed", 5, 100, math.floor(Config.DogfightFlashSpeed * 10), function(v) Config.DogfightFlashSpeed = v / 10 end, vSec3)
+
+-- ===== INTERFACE =====
+local uiSec1 = addSection(uiPage, "theme", uiTab)
+addDropdown(uiPage, "preset", {"Amber","Blue","Cyber","Crimson","Emerald","Mono","Violet"}, Config.UITheme, function(v)
+    applyTheme(v)
+    RepaintUI()
+    RepaintWatermark()
+    RepaintNotifications()
+end, uiSec1)
+addSlider(uiPage, "cornerRadius", 0, 30, Config.UICornerRadius, function(v)
+    Config.UICornerRadius = v
+    RepaintCorners()
+end, uiSec1)
+addSlider(uiPage, "uiOpacity", 40, 100, math.floor(Config.UIOpacity * 100), function(v) Config.UIOpacity = v / 100; RepaintOpacity() end, uiSec1)
+addSlider(uiPage, "uiScale", 70, 130, math.floor(Config.UIScale * 100), function(v) Config.UIScale = v / 100; RepaintScale() end, uiSec1)
+addToggle(uiPage, "navPulse", Config.UINavPulse, function(v) Config.UINavPulse = v end, uiSec1)
+addButton(uiPage, "randomAccent", function() return Theme.AccentDim end, function()
+    local h = math.random()
+    Theme.Accent = hsvToRgb(h, 0.72, 1)
+    Theme.AccentHi = hsvToRgb(h, 0.5, 1)
+    Theme.AccentDim = hsvToRgb(h, 0.9, 0.6)
+    RepaintUI()
+    RepaintWatermark()
+    RepaintNotifications()
+    SendNotification("theme", "random accent applied", 1.6, "success")
+end, uiSec1)
+addSlider(uiPage, "hue", 0, 360, 30, function(v)
+    local h = v / 360
+    Theme.Accent = hsvToRgb(h, 0.72, 1)
+    Theme.AccentHi = hsvToRgb(h, 0.5, 1)
+    Theme.AccentDim = hsvToRgb(h, 0.9, 0.6)
+    RepaintUI()
+    RepaintWatermark()
+    RepaintNotifications()
+end, uiSec1)
+
+addMasterToggle(uiPage, "watermark", "MasterWatermark", uiTab, function()
+    RepaintWatermark()
+end)
+local uiSec2 = addSection(uiPage, "watermark", uiTab)
+addInput(uiPage, "wmTitle", Config.WatermarkText, function(v) Config.WatermarkText = v; RepaintWatermark() end, uiSec2)
+addInput(uiPage, "wmSubtitle", Config.WatermarkSub, function(v) Config.WatermarkSub = v; RepaintWatermark() end, uiSec2)
+addDropdown(uiPage, "wmPosition", {"top-left","top-center","top-right","bottom-left","bottom-center","bottom-right"}, Config.WatermarkPosition, function(v) Config.WatermarkPosition = v; RepaintWatermark() end, uiSec2)
+addSlider(uiPage, "wmOffX", 0, 400, Config.WatermarkOffsetX, function(v) Config.WatermarkOffsetX = v; RepaintWatermark() end, uiSec2)
+addSlider(uiPage, "wmOffY", 0, 400, Config.WatermarkOffsetY, function(v) Config.WatermarkOffsetY = v; RepaintWatermark() end, uiSec2)
+addSlider(uiPage, "wmFontSize", 8, 24, Config.WatermarkFontSize, function(v) Config.WatermarkFontSize = v; RepaintWatermark() end, uiSec2)
+addSlider(uiPage, "wmPadding", 4, 24, Config.WatermarkPadding, function(v) Config.WatermarkPadding = v; RepaintWatermark() end, uiSec2)
+addSlider(uiPage, "wmCorner", 0, 30, Config.WatermarkCornerRadius, function(v) Config.WatermarkCornerRadius = v; RepaintWatermark() end, uiSec2)
+addSlider(uiPage, "wmOpacity", 20, 100, math.floor(Config.WatermarkOpacity * 100), function(v) Config.WatermarkOpacity = v / 100; RepaintWatermark() end, uiSec2)
+addToggle(uiPage, "wmShadow", Config.WatermarkShadow, function(v) Config.WatermarkShadow = v; RepaintWatermark() end, uiSec2)
+addToggle(uiPage, "wmBg", Config.WatermarkBackground, function(v) Config.WatermarkBackground = v; RepaintWatermark() end, uiSec2)
+addToggle(uiPage, "wmUseAccent", Config.WatermarkUseThemeAccent, function(v) Config.WatermarkUseThemeAccent = v; RepaintWatermark() end, uiSec2)
+addColorPicker(uiPage, "wmColor", Config.WatermarkColor, function(c)
+    Config.WatermarkColor = c
+    if not Config.WatermarkUseThemeAccent then RepaintWatermark() end
+end, uiSec2)
+addToggle(uiPage, "wmShowFps", Config.WatermarkShowFPS, function(v) Config.WatermarkShowFPS = v; RepaintWatermark() end, uiSec2)
+addToggle(uiPage, "wmShowPing", Config.WatermarkShowPing, function(v) Config.WatermarkShowPing = v; RepaintWatermark() end, uiSec2)
+addToggle(uiPage, "wmShowTime", Config.WatermarkShowTime, function(v) Config.WatermarkShowTime = v; RepaintWatermark() end, uiSec2)
+addToggle(uiPage, "wmShowUser", Config.WatermarkShowUser, function(v) Config.WatermarkShowUser = v; RepaintWatermark() end, uiSec2)
+addToggle(uiPage, "wmShowTarget", Config.WatermarkShowTarget, function(v) Config.WatermarkShowTarget = v; RepaintWatermark() end, uiSec2)
+addToggle(uiPage, "wmShowKills", Config.WatermarkShowKills, function(v) Config.WatermarkShowKills = v; RepaintWatermark() end, uiSec2)
+
+addMasterToggle(uiPage, "notifications", "MasterNotifications", uiTab)
+local uiSec3 = addSection(uiPage, "notifications", uiTab)
+addDropdown(uiPage, "notifPos", {"top-right","top-left","bottom-right","bottom-left"}, Config.NotifPosition, function(v) Config.NotifPosition = v; applyNotifPos() end, uiSec3)
+addSlider(uiPage, "notifDur", 5, 80, math.floor(Config.NotifDuration * 10), function(v) Config.NotifDuration = v / 10 end, uiSec3)
+addSlider(uiPage, "notifMax", 1, 10, Config.NotifMaxVisible, function(v) Config.NotifMaxVisible = v end, uiSec3)
+addSlider(uiPage, "notifWidth", 240, 440, Config.NotifWidth, function(v) Config.NotifWidth = v; applyNotifPos() end, uiSec3)
+addToggle(uiPage, "notifProgress", Config.NotifShowProgress, function(v) Config.NotifShowProgress = v end, uiSec3)
+addToggle(uiPage, "notifDismiss", Config.NotifClickDismiss, function(v) Config.NotifClickDismiss = v end, uiSec3)
+addButton(uiPage, "testNotif", Theme.AccentDim, function()
+    local kinds = {"info","success","warn","error"}
+    SendNotification("test toast", "custom notification system", 3, kinds[math.random(1,4)])
+end, uiSec3)
+addButton(uiPage, "testDogfight", Theme.AccentDim, function()
+    SendNotification("DOGFIGHT INBOUND", "enemy diving on your six", 4, "warn")
+end, uiSec3)
+
+-- ===== CONFIG TAB =====
+local cfgSec1 = addSection(configPage, "language", configTab)
+addDropdown(configPage, "language", {"EN","VN"}, Config.Language, function(v)
+    LANG = v
+    Config.Language = v
+    -- reapply all labels
+    for _, e in ipairs(RepaintRegistry.labels) do
+        if e.obj and e.obj.Parent and e.key then
+            e.obj.Text = T(e.key)
+        end
+    end
+    -- page title + tab labels
+    if activeTabData then
+        PageTitle.Text = T(activeTabData.I18nKey)
+        if activeTabData.SubtitleKey and activeTabData.SubtitleKey ~= "" then
+            PageSub.Text = T(activeTabData.SubtitleKey)
+        end
+    end
+    SendNotification("Language", v, 1.5, "success")
+end, cfgSec1)
+
+local cfgSec2 = addSection(configPage, "configTitle", configTab)
+local cfgInputRef = nil
+do
+    local _, box = addInput(configPage, "configName", "my_config", function(v) end, cfgSec2)
+    cfgInputRef = box
+end
+
+local configFolder = "wog_configs"
+pcall(function() if not isfolder(configFolder) then makefolder(configFolder) end end)
+
+local function serializeConfig()
+    local out = {}
+    for k, v in pairs(Config) do
+        if type(v) == "Color3" then
+            out[k] = {__c3 = true, r = v.R, g = v.G, b = v.B}
+        else
+            out[k] = v
+        end
+    end
+    return HttpService:JSONEncode(out)
+end
+
+local function deserializeIntoConfig(str)
+    local ok, decoded = pcall(function() return HttpService:JSONDecode(str) end)
+    if not ok or type(decoded) ~= "table" then return false end
+    for k, v in pairs(decoded) do
+        if type(v) == "table" and v.__c3 then
+            Config[k] = Color3.new(v.r, v.g, v.b)
+        else
+            Config[k] = v
+        end
+    end
+    return true
+end
+
+addButton(configPage, "saveConfig", Theme.AccentDim, function()
+    local name = cfgInputRef.Text
+    if name == "" or name == nil then name = "config_" .. os.time() end
+    local data = serializeConfig()
+    local ok = pcall(function() writefile(configFolder .. "/" .. name .. ".json", data) end)
+    SendNotification(T("configSaved"), name, 2, ok and "success" or "error")
+end, cfgSec2)
+
+addButton(configPage, "loadConfig", Theme.AccentDim, function()
+    local name = cfgInputRef.Text
+    if name == "" then return end
+    local ok, data = pcall(function() return readfile(configFolder .. "/" .. name .. ".json") end)
+    if not ok then SendNotification(T("loadConfig"), "file not found", 2, "error"); return end
+    if deserializeIntoConfig(data) then
+        applyTheme(Config.UITheme)
+        RepaintUI()
+        RepaintWatermark()
+        RepaintNotifications()
+        SendNotification(T("configLoaded"), name, 2, "success")
+    else
+        SendNotification(T("configInvalid"), "", 2, "error")
+    end
+end, cfgSec2)
+
+addButton(configPage, "exportConfig", Theme.AccentDim, function()
+    local str = serializeConfig()
+    pcall(function()
+        if setclipboard then setclipboard(str)
+        elseif toclipboard then toclipboard(str) end
+    end)
+    print("[WOG-CONFIG] " .. str)
+    SendNotification(T("configExported"), #str .. " bytes", 2, "success")
+end, cfgSec2)
+
+addButton(configPage, "importConfig", Theme.AccentDim, function()
+    local str = nil
+    pcall(function()
+        if getclipboard then str = getclipboard() end
+    end)
+    if not str or str == "" then SendNotification(T("importConfig"), "clipboard empty", 2, "error"); return end
+    if deserializeIntoConfig(str) then
+        applyTheme(Config.UITheme)
+        RepaintUI()
+        RepaintWatermark()
+        RepaintNotifications()
+        SendNotification(T("configImported"), "", 2, "success")
+    else
+        SendNotification(T("configInvalid"), "", 2, "error")
+    end
+end, cfgSec2)
+
+addButton(configPage, "resetConfig", Theme.Danger, function()
+    resetConfigToDefault()
+    LANG = Config.Language
+    applyTheme(Config.UITheme)
+    RepaintUI()
+    RepaintWatermark()
+    RepaintNotifications()
+    SendNotification(T("configReset"), "", 2, "warn")
+end, cfgSec2)
+
+local cfgSec3 = addSection(configPage, "savedConfigs", configTab)
+local savedList = Instance.new("Frame")
+savedList.Size = UDim2.new(1, 0, 0, 0)
+savedList.AutomaticSize = Enum.AutomaticSize.Y
+savedList.BackgroundTransparency = 1
+savedList.Parent = configPage
+cfgSec3(savedList)
+local savedLayout = Instance.new("UIListLayout")
+savedLayout.Padding = UDim.new(0, 4)
+savedLayout.Parent = savedList
+
+local function refreshSavedList()
+    for _, c in ipairs(savedList:GetChildren()) do
+        if c:IsA("GuiObject") then c:Destroy() end
+    end
+    local files = {}
+    pcall(function()
+        for _, f in ipairs(listfiles(configFolder)) do
+            local n = f:match("([^/\\]+)%.json$")
+            if n then table.insert(files, n) end
+        end
+    end)
+    if #files == 0 then
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, 0, 0, 30)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = T("noConfigs")
+        lbl.TextColor3 = Theme.TextMute
+        lbl.Font = Enum.Font.Gotham
+        lbl.TextSize = 11
+        lbl.Parent = savedList
+        return
+    end
+    for _, name in ipairs(files) do
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, 0, 0, 32)
+        row.BackgroundColor3 = Theme.Surface
+        row.BorderSizePixel = 0
+        row.Parent = savedList
+        corner(row, 0.65)
+
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, -150, 1, 0)
+        lbl.Position = UDim2.new(0, 12, 0, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = name
+        lbl.TextColor3 = Theme.Text
+        lbl.Font = Enum.Font.Code
+        lbl.TextSize = 11
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Parent = row
+
+        local lb = Instance.new("TextButton")
+        lb.Size = UDim2.new(0, 60, 0, 22)
+        lb.Position = UDim2.new(1, -130, 0.5, -11)
+        lb.BackgroundColor3 = Theme.AccentDim
+        lb.Text = T("loadConfig")
+        lb.TextColor3 = Theme.Text
+        lb.Font = Enum.Font.GothamMedium
+        lb.TextSize = 10
+        lb.BorderSizePixel = 0
+        lb.Parent = row
+        cornerAbs(lb, 4)
+        lb.MouseButton1Click:Connect(function()
+            local ok, data = pcall(function() return readfile(configFolder .. "/" .. name .. ".json") end)
+            if ok and deserializeIntoConfig(data) then
+                applyTheme(Config.UITheme)
+                RepaintUI()
+                RepaintWatermark()
+                RepaintNotifications()
+                SendNotification(T("configLoaded"), name, 2, "success")
+            end
+        end)
+
+        local db = Instance.new("TextButton")
+        db.Size = UDim2.new(0, 60, 0, 22)
+        db.Position = UDim2.new(1, -66, 0.5, -11)
+        db.BackgroundColor3 = Theme.Danger
+        db.Text = T("delete")
+        db.TextColor3 = Theme.Text
+        db.Font = Enum.Font.GothamMedium
+        db.TextSize = 10
+        db.BorderSizePixel = 0
+        db.Parent = row
+        cornerAbs(db, 4)
+        db.MouseButton1Click:Connect(function()
+            pcall(function() delfile(configFolder .. "/" .. name .. ".json") end)
+            refreshSavedList()
+        end)
+    end
+end
+refreshSavedList()
+
+-- ===== SYSTEM =====
+addMasterToggle(miscPage, "perf", "MasterPerf", miscTab)
+local mSec1 = addSection(miscPage, "perf", miscTab)
+addToggle(miscPage, "shadowsOff", Config.PerfNoShadows, function(v)
+    Config.PerfNoShadows = v
+    if Config.MasterPerf then
+        if v then DisableShadows() else RestoreShadows() end
+    end
+end, mSec1)
+addToggle(miscPage, "particlesOff", Config.PerfNoParticles, function(v)
+    Config.PerfNoParticles = v
+    if Config.MasterPerf then
+        if v then DisableParticles() else RestoreParticles() end
+    end
+end, mSec1)
+addToggle(miscPage, "throttlePart", Config.PerfThrottleParticles, function(v)
+    Config.PerfThrottleParticles = v
+    if Config.MasterPerf then
+        if v then ThrottleParticles() else RestoreThrottledParticles() end
+    end
+end, mSec1)
+addSlider(miscPage, "particleRate", 5, 80, math.floor(Config.PerfParticleThrottle * 100), function(v)
+    Config.PerfParticleThrottle = v / 100
+    if Config.MasterPerf and Config.PerfThrottleParticles then ThrottleParticles() end
+end, mSec1)
+addToggle(miscPage, "decalsOff", Config.PerfNoDecals, function(v)
+    Config.PerfNoDecals = v
+    if Config.MasterPerf then
+        if v then DisableDecals() else RestoreDecals() end
+    end
+end, mSec1)
+addToggle(miscPage, "postFxOff", Config.PerfNoPostFX, function(v)
+    Config.PerfNoPostFX = v
+    if Config.MasterPerf then
+        if v then DisablePostFX() else RestorePostFX() end
+    end
+end, mSec1)
+addToggle(miscPage, "flatMat", Config.PerfFlatMaterials, function(v)
+    Config.PerfFlatMaterials = v
+    if Config.MasterPerf then
+        if v then FlattenMaterials() else RestoreMaterials() end
+    end
+end, mSec1)
+addToggle(miscPage, "hideFar", Config.PerfHideFar, function(v)
+    Config.PerfHideFar = v
+    if Config.MasterPerf then
+        if v then HideFarParts() else RestoreFarParts() end
+    end
+end, mSec1)
+addSlider(miscPage, "hideDist", 500, 20000, Config.PerfHideFarDistance, function(v)
+    Config.PerfHideFarDistance = v
+    if Config.MasterPerf and Config.PerfHideFar then RestoreFarParts(); HideFarParts() end
+end, mSec1)
+
+addMasterToggle(miscPage, "protection", "MasterProtection", miscTab)
+local mSec2 = addSection(miscPage, "protection", miscTab)
+addToggle(miscPage, "antiVoid", Config.AntiVoid, function(v) Config.AntiVoid = v end, mSec2)
+addToggle(miscPage, "antiFling", Config.AntiFling, function(v) Config.AntiFling = v end, mSec2)
+
+local mSec3 = addSection(miscPage, "session", miscTab)
+addButton(miscPage, "unload", Theme.Danger, function()
+    if _G.__WOG_UNLOAD then _G.__WOG_UNLOAD() end
+end, mSec3)
+
+-- apply MasterPerf on toggle
+for _, ref in ipairs(State.MasterToggleRefs) do
+    if ref.configKey == "MasterPerf" then
+        local origSetFn = ref.setFn
+        -- we hook via config change; simpler: check in render loop
+    end
+end
+
+-- ===== REPAINT FUNCTIONS =====
+function RepaintOpacity()
+    local o = Config.UIOpacity
+    local targetT = math.clamp(1 - o, 0, 0.7)
+    if State.MenuOpen then MainFrame.BackgroundTransparency = targetT * 0.4 end
+end
+
+function RepaintScale()
+    local s = Config.UIScale
+    baseW, baseH = WIN_W * s, WIN_H * s
+    if State.MenuOpen then
+        MainFrame.Size = UDim2.new(0, baseW, 0, baseH)
+        MainFrame.Position = UDim2.new(0.5, -(baseW/2), 0.5, -(baseH/2))
+        Shadow.Size = UDim2.new(0, baseW + 10, 0, baseH + 10)
+        Shadow.Position = UDim2.new(0.5, -(baseW/2) - 5, 0.5, -(baseH/2) - 5)
+        OuterGlow.Size = UDim2.new(0, baseW + 20, 0, baseH + 20)
+        OuterGlow.Position = UDim2.new(0.5, -(baseW/2) - 10, 0.5, -(baseH/2) - 10)
+    end
+end
+
+-- ===== CORE: HITBOX / DOGFIGHT / RADAR / ESP / SILENT AIM =====
+
+local function getOwningPlayer(m)
+    if not m then return nil end
+    local p = Players:FindFirstChild(m.Name)
+    if p and p:IsA("Player") then return p end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Name == m.Name then return plr end
+    end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if m.Name:find(plr.Name, 1, true) then return plr end
+    end
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr.Character and (m == plr.Character or m:IsDescendantOf(plr.Character)) then return plr end
+    end
+    return nil
+end
+
+local function IsMyPlane(model)
+    if not model then return false end
+    local myModel = Workspace.Camera:FindFirstChild("plane_model")
+    if myModel and (model == myModel or model:IsDescendantOf(myModel)) then return true end
+    if model.Name == LP.Name then return true end
+    if model.Name == tostring(LP.UserId) then return true end
+    return false
+end
+
+local function ShouldShowModel(model, isBot)
+    if not model then return false end
+    if IsMyPlane(model) then return false end
+    if isBot then return true end
+    if not Config.TeamCheck then return true end
+    local owner = getOwningPlayer(model)
+    if not owner then return true end
+    if owner == LP then return false end
+    if owner.Team and LP.Team and owner.Team == LP.Team then return false end
+    if owner.TeamColor and LP.TeamColor and owner.TeamColor == LP.TeamColor then return false end
+    return true
+end
+
+-- HITBOX
+local debugHighlights = {}
+local function ClearDebugHighlights()
+    for _, h in pairs(debugHighlights) do
+        if h and h.Parent then h:Destroy() end
+    end
+    table.clear(debugHighlights)
+end
+
+local function ApplyRealHitbox()
+    local isMouseDown = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+    for _, part in ipairs(FindAllPlaneParts()) do
+        local n = part.Name
+        local model = part:FindFirstAncestorWhichIsA("Model")
+        local show = model and ShouldShowModel(model)
+        if (n == "Fuselage" or n == "LeftWing" or n == "RightWing") and show then
+            local shouldExpand = true
+            if Config.SmartHitbox and not isMouseDown then shouldExpand = false end
+            local mul = (n == "Fuselage") and Config.HitboxFuselageMul or Config.HitboxWingMul
+            if shouldExpand then
+                if not State.OriginalSizes[part] then State.OriginalSizes[part] = part.Size end
+                local orig = State.OriginalSizes[part]
+                part.Size = Vector3.new(orig.X * mul, orig.Y, orig.Z * mul)
+                if Config.HitboxDebug and not debugHighlights[part] then
+                    local h = Instance.new("Highlight")
+                    h.Adornee = part
+                    h.FillColor = Color3.fromRGB(255, 220, 60)
+                    h.OutlineColor = Color3.fromRGB(255, 140, 0)
+                    h.FillTransparency = 0.7
+                    h.OutlineTransparency = 0
+                    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    h.Parent = part
+                    debugHighlights[part] = h
+                end
+            else
+                if State.OriginalSizes[part] then part.Size = State.OriginalSizes[part] end
+            end
+        end
+    end
+    if not Config.HitboxDebug then ClearDebugHighlights() end
+end
+
+-- DOGFIGHT
+local function updateDogfightThreats(cam)
+    table.clear(State.DogfightThreats)
+    if not Config.MasterDogfight then return end
+    local myChar = LP.Character
+    if not myChar then return end
+    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then return end
+    local myPos = myHRP.Position
+    local _, models = FindAllPlaneParts()
+    for _, data in ipairs(models) do
+        local fus = data.fuselage
+        local model = data.model
+        if fus and fus.Parent and ShouldShowModel(model, data.isBot) then
+            local enemyPos = fus.Position
+            local enemyVel = fus.AssemblyLinearVelocity
+            if enemyVel.Magnitude >= Config.DogfightMinSpeed then
+                local toMe = myPos - enemyPos
+                local dist = toMe.Magnitude
+                if dist > 30 and dist < Config.DogfightRange then
+                    local altDiff = math.abs(enemyPos.Y - myPos.Y)
+                    if altDiff < Config.DogfightAltTolerance then
+                        local toMeDir = toMe.Unit
+                        local enemyDir = enemyVel.Unit
+                        local dot = toMeDir:Dot(enemyDir)
+                        if dot >= Config.DogfightDotThreshold then
+                            local closing = enemyVel:Dot(toMeDir)
+                            if closing > 10 then
+                                local tti = dist / closing
+                                if tti <= Config.DogfightTTI then
+                                    table.insert(State.DogfightThreats, {
+                                        pos = enemyPos, dist = dist, tti = tti,
+                                        name = model.Name, isBot = data.isBot,
+                                    })
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function DrawDogfightWarning(cam, vpSize, center)
+    if not Config.MasterDogfight then return end
+    local threats = State.DogfightThreats
+    if #threats == 0 then return end
+    local now = os.clock()
+    local flash = 0.5 + 0.5 * math.sin(now * Config.DogfightFlashSpeed * math.pi)
+    local col = Config.DogfightColor
+    local closest = threats[1]
+    for _, t in ipairs(threats) do
+        if t.tti < closest.tti then closest = t end
+    end
+    if Config.DogfightShowBorder then
+        local thickness = 6 + flash * 4
+        local alpha = 0.35 + flash * 0.35
+        local edges = {
+            {Vector2.new(0, 2), Vector2.new(vpSize.X, 2)},
+            {Vector2.new(0, vpSize.Y-2), Vector2.new(vpSize.X, vpSize.Y-2)},
+            {Vector2.new(2, 0), Vector2.new(2, vpSize.Y)},
+            {Vector2.new(vpSize.X-2, 0), Vector2.new(vpSize.X-2, vpSize.Y)},
+        }
+        for _, e in ipairs(edges) do
+            local l = GetPooledDrawing("Line")
+            l.Visible = true; l.From = e[1]; l.To = e[2]
+            l.Color = col; l.Thickness = thickness; l.Transparency = 1 - alpha
+        end
+    end
+    if Config.DogfightShowText then
+        local textY = vpSize.Y * 0.15
+        local textCol = col:Lerp(Color3.new(1,1,1), flash * 0.6)
+        local glow = GetPooledDrawing("Text")
+        glow.Visible = true; glow.Position = Vector2.new(center.X, textY); glow.Center = true
+        glow.Outline = false; glow.Color = col; glow.Size = 30
+        glow.Transparency = 0.6 + (1 - flash) * 0.3
+        glow.Text = "DOGFIGHT"
+        local txt = GetPooledDrawing("Text")
+        txt.Visible = true; txt.Position = Vector2.new(center.X, textY); txt.Center = true
+        txt.Outline = true; txt.Color = textCol; txt.Size = 24
+        txt.Transparency = 0; txt.Text = "DOGFIGHT"
+        local subTxt = GetPooledDrawing("Text")
+        subTxt.Visible = true; subTxt.Position = Vector2.new(center.X, textY + 22)
+        subTxt.Center = true; subTxt.Outline = true
+        subTxt.Color = col:Lerp(Color3.new(1,1,1), 0.4); subTxt.Size = 12; subTxt.Transparency = 0
+        subTxt.Text = string.format("%s — %.0fm — T-%.1fs", string.upper(tostring(closest.name)), closest.dist, math.max(closest.tti, 0))
+    end
+    if Config.DogfightShowArrow then
+        for _, t in ipairs(threats) do
+            local sp, on = cam:WorldToViewportPoint(t.pos)
+            local tx, ty
+            if on and sp.Z > 0 and sp.X > 40 and sp.X < vpSize.X - 40 and sp.Y > 40 and sp.Y < vpSize.Y - 40 then
+                tx, ty = sp.X, sp.Y
+            else
+                local rel = t.pos - cam.CFrame.Position
+                local camCF = cam.CFrame
+                local rx = rel:Dot(camCF.RightVector)
+                local ry = rel:Dot(camCF.UpVector)
+                local ang = math.atan2(ry, rx)
+                local edge = math.min(vpSize.X, vpSize.Y) * 0.40
+                tx = center.X + math.cos(ang) * edge
+                ty = center.Y - math.sin(ang) * edge
+            end
+            local dx = tx - center.X
+            local dy = ty - center.Y
+            local mag = math.sqrt(dx*dx + dy*dy)
+            if mag > 1 then
+                dx = dx / mag; dy = dy / mag
+                local arrowLen = 22 + flash * 6
+                local baseX = tx - dx * arrowLen
+                local baseY = ty - dy * arrowLen
+                local perpX = -dy; local perpY = dx
+                local wingSize = 10
+                local leftTip = Vector2.new(baseX + perpX * wingSize, baseY + perpY * wingSize)
+                local rightTip = Vector2.new(baseX - perpX * wingSize, baseY - perpY * wingSize)
+                local tip = Vector2.new(tx, ty)
+                local l1 = GetPooledDrawing("Line")
+                l1.Visible = true; l1.From = leftTip; l1.To = tip
+                l1.Color = col; l1.Thickness = 3; l1.Transparency = 0
+                local l2 = GetPooledDrawing("Line")
+                l2.Visible = true; l2.From = rightTip; l2.To = tip
+                l2.Color = col; l2.Thickness = 3; l2.Transparency = 0
+                local t2 = GetPooledDrawing("Text")
+                t2.Visible = true
+                t2.Position = Vector2.new(baseX - dx * 16, baseY - dy * 16)
+                t2.Center = true; t2.Outline = true
+                t2.Color = col; t2.Size = 11; t2.Transparency = 0
+                t2.Text = string.format("%.0fm", t.dist)
+            end
+        end
+    end
+end
+
+-- RADAR
+local function DrawRadar(cam, vpSize)
+    if not Config.MasterRadar then return end
+    local radarSize = Config.RadarSize
+    local radius = radarSize / 2 - 6
+    local center = Vector2.new(vpSize.X - radarSize / 2 - Config.RadarPosX, radarSize / 2 + Config.RadarPosY)
+    local shape = Config.RadarShape or "Circle"
+    if shape == "Square" then
+        local bg = GetPooledDrawing("Square")
+        bg.Visible = true; bg.Size = Vector2.new(radius * 2, radius * 2)
+        bg.Position = Vector2.new(center.X - radius, center.Y - radius)
+        bg.Color = Config.RadarBgColor; bg.Filled = true; bg.Thickness = 1; bg.Transparency = 0.2
+        local ring = GetPooledDrawing("Square")
+        ring.Visible = true; ring.Size = Vector2.new(radius * 2, radius * 2)
+        ring.Position = Vector2.new(center.X - radius, center.Y - radius)
+        ring.Color = Theme.BorderHi; ring.Filled = false; ring.Thickness = 1.5; ring.Transparency = 0.4
+    else
+        local bg = GetPooledDrawing("Circle")
+        bg.Visible = true; bg.Position = center; bg.Radius = radius
+        bg.Color = Config.RadarBgColor; bg.Filled = true; bg.Thickness = 1; bg.Transparency = 0.2
+        for _, factor in ipairs({1.0, 0.66, 0.33}) do
+            local r = GetPooledDrawing("Circle")
+            r.Visible = true; r.Position = center; r.Radius = radius * factor
+            r.Color = Theme.BorderHi; r.Filled = false; r.Thickness = 1; r.Transparency = 0.5
+        end
+    end
+    local hLine = GetPooledDrawing("Line")
+    hLine.Visible = true; hLine.From = Vector2.new(center.X - radius, center.Y); hLine.To = Vector2.new(center.X + radius, center.Y)
+    hLine.Color = Theme.Border; hLine.Thickness = 1; hLine.Transparency = 0.65
+    local vLine = GetPooledDrawing("Line")
+    vLine.Visible = true; vLine.From = Vector2.new(center.X, center.Y - radius); vLine.To = Vector2.new(center.X, center.Y + radius)
+    vLine.Color = Theme.Border; vLine.Thickness = 1; vLine.Transparency = 0.65
+    local sweepAngle = (os.clock() * 1.6) % (math.pi * 2)
+    local sweep = GetPooledDrawing("Line")
+    sweep.Visible = true; sweep.From = center
+    sweep.To = Vector2.new(center.X + math.cos(sweepAngle) * radius, center.Y + math.sin(sweepAngle) * radius)
+    sweep.Color = Theme.Accent; sweep.Thickness = 2; sweep.Transparency = 0.2
+    for k = 1, 10 do
+        local a = sweepAngle - k * 0.09
+        local trailLen = math.min(radius * (1 - k * 0.03), radius)
+        local trl = GetPooledDrawing("Line")
+        trl.Visible = true; trl.From = center
+        trl.To = Vector2.new(center.X + math.cos(a) * trailLen, center.Y + math.sin(a) * trailLen)
+        trl.Color = Theme.Accent; trl.Thickness = 1; trl.Transparency = 0.2 + k * 0.07
+    end
+    if Config.RadarShowCardinals and shape == "Circle" then
+        local labels = {
+            {t = "N", x = center.X, y = center.Y - radius - 10},
+            {t = "S", x = center.X, y = center.Y + radius + 2},
+            {t = "E", x = center.X + radius + 4, y = center.Y - 6},
+            {t = "W", x = center.X - radius - 12, y = center.Y - 6},
+        }
+        for _, l in ipairs(labels) do
+            local t = GetPooledDrawing("Text")
+            t.Visible = true; t.Position = Vector2.new(l.x, l.y)
+            t.Center = true; t.Outline = true
+            t.Color = Theme.Accent; t.Size = 10; t.Text = l.t
+        end
+    end
+    if Config.RadarShowRangeText then
+        local rt = GetPooledDrawing("Text")
+        rt.Visible = true; rt.Position = Vector2.new(center.X, center.Y + radius + 16)
+        rt.Center = true; rt.Outline = true; rt.Color = Theme.TextDim; rt.Size = 10
+        rt.Text = string.format("%dm", Config.RadarRange)
+    end
+    if Config.RadarShowBlips then
+        local _, models = FindAllPlaneParts()
+        local camCF = cam.CFrame
+        local camPos = camCF.Position
+        local range = Config.RadarRange
+        local now = os.clock()
+        for _, data in ipairs(models) do
+            local model = data.model
+            local fus = data.fuselage
+            if fus and fus.Parent and ShouldShowModel(model, data.isBot) then
+                local rel = fus.Position - camPos
+                local flat = Vector3.new(rel.X, 0, rel.Z)
+                local rX = flat:Dot(camCF.RightVector)
+                local rZ = flat:Dot(camCF.LookVector)
+                local dist = math.sqrt(rX*rX + rZ*rZ)
+                if dist <= range then
+                    local nx = rX / range
+                    local ny = rZ / range
+                    local bx = center.X + nx * radius
+                    local by = center.Y - ny * radius
+                    if Config.RadarShowAltitude then
+                        local altDiff = fus.Position.Y - camPos.Y
+                        by = by - math.clamp(altDiff / 200, -6, 6)
+                    end
+                    local blipSize = math.clamp(5 * (1 - dist / range) + 2, 2, 6)
+                    local blip = GetPooledDrawing("Circle")
+                    blip.Visible = true; blip.Position = Vector2.new(bx, by); blip.Radius = blipSize
+                    blip.Color = Config.RadarBlipColor; blip.Filled = true; blip.Thickness = 1; blip.Transparency = 0
+                    local ring = GetPooledDrawing("Circle")
+                    ring.Visible = true; ring.Position = Vector2.new(bx, by); ring.Radius = blipSize + 2
+                    ring.Color = Config.RadarBlipColor; ring.Filled = false; ring.Thickness = 1; ring.Transparency = 0.55
+                    if Config.RadarShowPulse then
+                        local pulsePhase = (now * 1.5) % 1
+                        local pulse = GetPooledDrawing("Circle")
+                        pulse.Visible = true; pulse.Position = Vector2.new(bx, by)
+                        pulse.Radius = blipSize + 2 + pulsePhase * 8
+                        pulse.Color = Config.RadarBlipColor; pulse.Filled = false; pulse.Thickness = 1
+                        pulse.Transparency = 0.15 + pulsePhase * 0.7
+                    end
+                    if Config.RadarShowCones then
+                        local look = fus.CFrame.LookVector
+                        local flatLook = Vector3.new(look.X, 0, look.Z)
+                        if flatLook.Magnitude > 0.01 then
+                            flatLook = flatLook.Unit
+                            local lx = flatLook:Dot(camCF.RightVector)
+                            local lz = flatLook:Dot(camCF.LookVector)
+                            local cone = GetPooledDrawing("Line")
+                            cone.Visible = true; cone.From = Vector2.new(bx, by)
+                            cone.To = Vector2.new(bx + lx * (blipSize + 8), by - lz * (blipSize + 8))
+                            cone.Color = Config.RadarBlipColor; cone.Thickness = 1.5; cone.Transparency = 0.4
+                        end
+                    end
+                end
+            end
+        end
+    end
+    if Config.RadarShowSelf then
+        local sm = GetPooledDrawing("Circle")
+        sm.Visible = true; sm.Position = center; sm.Radius = 3
+        sm.Color = Theme.Good; sm.Filled = true; sm.Thickness = 1; sm.Transparency = 0
+    end
+    if Config.RadarShowHeading then
+        local fwd = cam.CFrame.LookVector
+        local fwdFlat = Vector3.new(fwd.X, 0, fwd.Z)
+        if fwdFlat.Magnitude > 0.01 then
+            fwdFlat = fwdFlat.Unit
+            local head = GetPooledDrawing("Line")
+            head.Visible = true; head.From = center
+            head.To = Vector2.new(center.X + fwdFlat.X * 14, center.Y - fwdFlat.Z * 14)
+            head.Color = Theme.Good; head.Thickness = 2; head.Transparency = 0
+        end
+    end
+end
+
+-- ESP
+local function DrawESP(cam, vpSize, center)
+    if not Config.MasterESP then return end
+    local _, models = FindAllPlaneParts()
+    local now = os.clock()
+    local function inDistance(d)
+        if d < Config.ESPMinDistance then return false end
+        if d > Config.ESPMaxDistance then return false end
+        return true
+    end
+    for _, data in ipairs(models) do
+        local model = data.model
+        local fuselage = data.fuselage
+        if fuselage and fuselage.Parent and ShouldShowModel(model, data.isBot) then
+            local anchorPos = fuselage.Position
+            local distance = (anchorPos - cam.CFrame.Position).Magnitude
+            if inDistance(distance) then
+                local pos, onScreen = cam:WorldToViewportPoint(anchorPos)
+                local inFov = true
+                if Config.ESPFovOnly then
+                    inFov = onScreen and pos.Z > 0 and ((Vector2.new(pos.X, pos.Y) - center).Magnitude <= Config.FOVRadius)
+                end
+                if onScreen and pos.Z > 0 and inFov then
+                    local boxSize = math.clamp(2800 / math.max(distance, 50), 22, 90)
+                    local bt = Config.ESPBoxThickness
+                    local col = Config.ESPColor
+                    if Config.ESPBox then
+                        local box = GetPooledDrawing("Square")
+                        box.Visible = true
+                        box.Size = Vector2.new(boxSize, boxSize)
+                        box.Position = Vector2.new(pos.X - boxSize/2, pos.Y - boxSize/2)
+                        box.Color = col; box.Thickness = bt; box.Filled = false; box.Transparency = 0.15
+                    end
+                    if Config.ESPCorner then
+                        local half = boxSize / 2
+                        local seg = boxSize * 0.26
+                        local corners = {
+                            {pos.X-half, pos.Y-half, 1, 1},
+                            {pos.X+half, pos.Y-half, -1, 1},
+                            {pos.X-half, pos.Y+half, 1, -1},
+                            {pos.X+half, pos.Y+half, -1, -1},
+                        }
+                        for _, c in ipairs(corners) do
+                            local cx, cy, dx, dy = c[1], c[2], c[3], c[4]
+                            local h = GetPooledDrawing("Line")
+                            h.From = Vector2.new(cx, cy); h.To = Vector2.new(cx + seg*dx, cy)
+                            h.Color = col; h.Thickness = bt+0.5; h.Transparency = 0
+                            local v = GetPooledDrawing("Line")
+                            v.From = Vector2.new(cx, cy); v.To = Vector2.new(cx, cy + seg*dy)
+                            v.Color = col; v.Thickness = bt+0.5; v.Transparency = 0
+                        end
+                    end
+                    if Config.ESPHealthBar then
+                        local frac = 1.0
+                        local hum = nil
+                        local char = nil
+                        for _, plr in ipairs(Players:GetPlayers()) do
+                            if model.Name:find(plr.Name) then char = plr.Character; break end
+                        end
+                        if char then hum = char:FindFirstChildWhichIsA("Humanoid") end
+                        if hum then frac = hum.Health / math.max(hum.MaxHealth, 1) end
+                        local c2 = healthColor(frac)
+                        if Config.ESPHealthPulse and frac < 0.3 then
+                            local pulse = 0.7 + 0.3 * math.sin(now * 8)
+                            c2 = c2:Lerp(Color3.new(1,1,1), 1 - pulse)
+                        end
+                        if Config.ESPHealthHorizontal then
+                            local bw, bh = 48, 3
+                            local bx = pos.X - bw/2
+                            local by = pos.Y + boxSize/2 + 6
+                            local bg = GetPooledDrawing("Square")
+                            bg.Size = Vector2.new(bw, bh); bg.Position = Vector2.new(bx, by)
+                            bg.Color = Color3.fromRGB(15,15,15); bg.Filled = true; bg.Transparency = 0.2
+                            local fill = GetPooledDrawing("Square")
+                            fill.Size = Vector2.new(bw * frac, bh); fill.Position = Vector2.new(bx, by)
+                            fill.Color = c2; fill.Filled = true
+                        else
+                            local barH, barW = 44, 3
+                            local barX = pos.X - boxSize/2 - 7
+                            local barY = pos.Y - barH/2
+                            local bg = GetPooledDrawing("Square")
+                            bg.Size = Vector2.new(barW, barH); bg.Position = Vector2.new(barX, barY)
+                            bg.Color = Color3.fromRGB(15,15,15); bg.Filled = true; bg.Transparency = 0.2
+                            local fill = GetPooledDrawing("Square")
+                            fill.Size = Vector2.new(barW, barH * frac)
+                            fill.Position = Vector2.new(barX, barY + barH * (1 - frac))
+                            fill.Color = c2; fill.Filled = true
+                        end
+                    end
+                    if Config.ESPName or Config.ESPDistance then
+                        local nameText = model.Name
+                        if Config.ESPNameUpper then nameText = nameText:upper() end
+                        if Config.ESPName then
+                            local t = GetPooledDrawing("Text")
+                            t.Position = Vector2.new(pos.X, pos.Y - boxSize/2 - 16)
+                            t.Center = true; t.Outline = Config.ESPOutline
+                            t.Color = col:Lerp(Color3.new(1,1,1), 0.5); t.Size = 11
+                            t.Text = nameText
+                        end
+                        if Config.ESPDistance then
+                            local t2 = GetPooledDrawing("Text")
+                            t2.Position = Vector2.new(pos.X, pos.Y - boxSize/2 - 3)
+                            t2.Center = true; t2.Outline = Config.ESPOutline
+                            t2.Color = Color3.fromRGB(200,200,205); t2.Size = 10
+                            t2.Text = string.format("[%dm]", math.floor(distance))
+                        end
+                    end
+                elseif Config.ESPOffscreen then
+                    local rel = anchorPos - cam.CFrame.Position
+                    local camCF = cam.CFrame
+                    local rx = rel:Dot(camCF.RightVector)
+                    local ry = rel:Dot(camCF.UpVector)
+                    local ang = math.atan2(ry, rx)
+                    local edge = math.min(vpSize.X, vpSize.Y) * 0.40
+                    local ex = center.X + math.cos(ang) * edge
+                    local ey = center.Y - math.sin(ang) * edge
+                    local dx = ex - center.X
+                    local dy = ey - center.Y
+                    local mag = math.sqrt(dx*dx + dy*dy)
+                    if mag > 1 then
+                        dx = dx / mag; dy = dy / mag
+                        local big = Config.ESPOffscreenBig
+                        local arrowLen = big and 26 or 16
+                        local wingSize = big and 12 or 7
+                        local bx = ex - dx * arrowLen
+                        local by = ey - dy * arrowLen
+                        local px = -dy; local py = dx
+                        local l1 = GetPooledDrawing("Line")
+                        l1.Visible = true
+                        l1.From = Vector2.new(bx + px*wingSize, by + py*wingSize)
+                        l1.To = Vector2.new(ex, ey)
+                        l1.Color = col; l1.Thickness = big and 3.5 or 2.5; l1.Transparency = 0
+                        local l2 = GetPooledDrawing("Line")
+                        l2.Visible = true
+                        l2.From = Vector2.new(bx - px*wingSize, by - py*wingSize)
+                        l2.To = Vector2.new(ex, ey)
+                        l2.Color = col; l2.Thickness = big and 3.5 or 2.5; l2.Transparency = 0
+                        if Config.ESPOffscreenShowDistance then
+                            local t = GetPooledDrawing("Text")
+                            t.Visible = true
+                            t.Position = Vector2.new(bx - dx*16, by - dy*16)
+                            t.Center = true; t.Outline = true
+                            t.Color = col; t.Size = big and 11 or 10
+                            t.Text = string.format("%.0fm", distance)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- PROTECTION
+task.spawn(function()
+    while State.Running do
+        RunService.Heartbeat:Wait()
+        if not Config.MasterProtection then continue end
+        local char = LP.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            if Config.AntiVoid and hrp.Position.Y < -50 then
+                hrp.CFrame = CFrame.new(hrp.Position.X, 500, hrp.Position.Z)
+            end
+            if Config.AntiFling then
+                local vel = hrp.AssemblyLinearVelocity
+                if vel.Magnitude > 500 then hrp.AssemblyLinearVelocity = vel.Unit * 100 end
+            end
+        end
+    end
+end)
+
+-- SILENT AIM
+task.spawn(function()
+    if not game:IsLoaded() then game.Loaded:Wait() end
+    local PS = LP:WaitForChild("PlayerScripts", 10)
+    local CC = PS and PS:WaitForChild("ClientCore", 10)
+    local FW = CC and CC:WaitForChild("Framework", 10)
+    local MD = FW and FW:WaitForChild("Modules", 10)
+    if not MD then return end
+
+    local function safeRequire(o)
+        if o and o:IsA("ModuleScript") then
+            local ok, r = pcall(require, o)
+            if ok then return r end
+        end
+        return nil
+    end
+
+    local Weapon = safeRequire(MD:FindFirstChild("Weapon"))
+    local Controls = safeRequire(MD:FindFirstChild("Controls"))
+    local CameraModule = safeRequire(MD:FindFirstChild("Camera"))
+    local Plane = safeRequire(MD:FindFirstChild("Plane"))
+    local ProjectileCompute = safeRequire(ReplicatedStorage.Shared:FindFirstChild("ProjectileParallelCompute"))
+    local ArmamentData = safeRequire(ReplicatedStorage.Assets.Modules.Essentials:FindFirstChild("ArmamentData"))
+
+    if not (Weapon and Controls and CameraModule and Plane and ProjectileCompute and ArmamentData) then
+        warn("[WOG] silent aim: module require failed")
+        return
+    end
+    State.SilentAimReady = true
+
+    local ConditionService
+    pcall(function() ConditionService = _G:require("ConditionService") end)
+
+    State.OriginalNewBullet = Weapon.new_bullet
+    State.WeaponModule = Weapon
+
+    local function solveInterceptTime(shooterPos, targetPos, targetDir, targetSpeed, projectileSpeed, projectileMass)
+        local speed = math.max(projectileSpeed, 0.001)
+        local dragFactor = 0.02 / math.max(projectileMass, 1e-6)
+        local delta = targetPos - shooterPos
+        local t = delta.Magnitude / speed
+        for _ = 1, 6 do
+            local futureDistance = (delta + (targetDir * targetSpeed * t)).Magnitude
+            local dragDistance = dragFactor * futureDistance
+            local newTime
+            if dragDistance > 1e-4 then
+                newTime = (math.exp(math.min(dragDistance, 30)) - 1) / (dragFactor * speed)
+            else
+                newTime = futureDistance / speed
+            end
+            t = newTime
+            if newTime >= 2.4 then return 2.4 end
+        end
+        return t
+    end
+
+    local function resolveTargetModel(name)
+        if not name then return nil end
+        local pf = CameraModule.plane_part_viewmodels
+        if pf and pf:FindFirstChild(name) then return pf:FindFirstChild(name) end
+        local bf = CameraModule.bot_plane_viewmodels
+        if bf and bf:FindFirstChild(name) then return bf:FindFirstChild(name) end
+        local vm = CameraModule.plane_viewmodels
+        if vm and vm:FindFirstChild(name) then return vm:FindFirstChild(name) end
+        return nil
+    end
+
+    local function getTargetPart(model)
+        if not model then return nil end
+        local chosen = model:FindFirstChild(Config.HitPart)
+        if chosen and chosen:IsA("BasePart") then return chosen end
+        if model.PrimaryPart then return model.PrimaryPart end
+        return nil
+    end
+
+    local function enemyCheck(name)
+        if not Config.TeamCheck then return true end
+        local p = Players:FindFirstChild(name)
+        if not p then return true end
+        return p.TeamColor ~= LP.TeamColor
+    end
+
+    local function targetAlive(name)
+        if ConditionService then
+            local ok, destroyed = pcall(function() return ConditionService:getConditionValue(name, "destroyed") end)
+            if ok and destroyed then return false end
+        end
+        return true
+    end
+
+    local function insideFOV(worldPos)
+        local cam = Workspace.CurrentCamera
+        if not cam then return false, math.huge end
+        local p, visible = cam:WorldToViewportPoint(worldPos)
+        if not visible or p.Z <= 0 then return false, math.huge end
+        local center = cam.ViewportSize * 0.5
+        local dist = (Vector2.new(p.X, p.Y) - center).Magnitude
+        return dist <= Config.FOVRadius, dist
+    end
+
+    local function updateTargetMotion(name, position)
+        local now = os.clock()
+        local h = State.History[name]
+        if not h then
+            State.History[name] = {pos = position, time = now, smoothVelocity = Vector3.zero}
+            return Vector3.zero, 0
+        end
+        local dt = math.clamp(now - h.time, 1/240, 0.25)
+        local rawVelocity = (position - h.pos) / dt
+        local alpha = 1 - math.exp(-dt / 0.15)
+        h.smoothVelocity = h.smoothVelocity:Lerp(rawVelocity, alpha)
+        h.pos = position
+        h.time = now
+        local direction = h.smoothVelocity.Magnitude > 1e-4 and h.smoothVelocity.Unit or Vector3.zero
+        local targetSpeed = h.smoothVelocity.Magnitude
+        if ConditionService then
+            local ok, speed = pcall(function() return ConditionService:getConditionValue(name, "speed") end)
+            if ok and tonumber(speed) then targetSpeed = tonumber(speed) / 14.4 end
+        end
+        return direction, targetSpeed
+    end
+
+    local function acquireGameTarget(force)
+        local now = os.clock()
+        if not force and now - State.LastAcquire < Config.TargetSwitchCooldown then return end
+        State.LastAcquire = now
+        local folders = {CameraModule.plane_part_viewmodels, CameraModule.bot_plane_viewmodels, CameraModule.plane_viewmodels}
+
+        if Config.TargetSelection == "Closest Distance" then
+            local closestName, minDist = nil, math.huge
+            local origin = Workspace.CurrentCamera and Workspace.CurrentCamera.CFrame.Position or Vector3.zero
+            for _, folder in ipairs(folders) do
+                if folder then
+                    for _, model in ipairs(folder:GetChildren()) do
+                        if model:IsA("Model") and model.Name ~= LP.Name and enemyCheck(model.Name) and targetAlive(model.Name) then
+                            local part = getTargetPart(model)
+                            if part then
+                                local d = (part.Position - origin).Magnitude
+                                if d < minDist then minDist = d; closestName = model.Name end
+                            end
+                        end
+                    end
+                end
+            end
+            if closestName then
+                State.CurrentTarget = closestName
+                State.CurrentTargetModel = resolveTargetModel(closestName)
+                State.LastTargetChange = now
+                return
+            end
+        elseif Config.TargetSelection == "Closest FOV" then
+            local closestName, minFovDist = nil, math.huge
+            for _, folder in ipairs(folders) do
+                if folder then
+                    for _, model in ipairs(folder:GetChildren()) do
+                        if model:IsA("Model") and model.Name ~= LP.Name and enemyCheck(model.Name) and targetAlive(model.Name) then
+                            local part = getTargetPart(model)
+                            if part then
+                                local inFov, fovDist = insideFOV(part.Position)
+                                if inFov and fovDist < minFovDist then minFovDist = fovDist; closestName = model.Name end
+                            end
+                        end
+                    end
+                end
+            end
+            if closestName then
+                State.CurrentTarget = closestName
+                State.CurrentTargetModel = resolveTargetModel(closestName)
+                State.LastTargetChange = now
+                return
+            end
+        end
+
+        pcall(function() Controls:lock_on_plane("auto") end)
+        local name = Controls.AimAssistTarget or Controls.PlayerLocked
+        if name and name ~= false and name ~= "" then
+            name = tostring(name)
+            if State.CurrentTarget ~= name then
+                if State.CurrentTarget and now - State.LastTargetChange < Config.TargetHoldTime and not force then return end
+                State.CurrentTarget = name
+                State.CurrentTargetModel = resolveTargetModel(name)
+                State.LastTargetChange = now
+            end
+        end
+    end
+
+    local function validateTarget(origin)
+        if not State.CurrentTarget then return nil end
+        if not enemyCheck(State.CurrentTarget) then return nil end
+        if not targetAlive(State.CurrentTarget) then return nil end
+        local model = State.CurrentTargetModel or resolveTargetModel(State.CurrentTarget)
+        State.CurrentTargetModel = model
+        if not model then return nil end
+        local part = getTargetPart(model)
+        if not part then return nil end
+        local distance = (part.Position - origin).Magnitude
+        State.TargetDistance = distance
+        if distance > Config.MaxDistance then return nil end
+        local inFov, screenDistance = insideFOV(part.Position)
+        if not inFov then return nil end
+        return part
+    end
+
+    local function simulateProjectile(startCF, velocity, mass, flightTime)
+        if typeof(startCF) ~= "CFrame" then return nil end
+        velocity = tonumber(velocity); mass = tonumber(mass); flightTime = tonumber(flightTime)
+        if not velocity or not mass or not flightTime or flightTime <= 0 then return nil end
+        local cf, speed = startCF, velocity
+        local startPos = startCF.Position
+        local elapsed = 0
+        while elapsed < flightTime do
+            local dt = math.min(1/120, flightTime - elapsed)
+            local ok, newCF, _, newVelocity = pcall(ProjectileCompute.integrate, cf, 0, -0.12, speed, mass, startPos, dt)
+            if not ok or typeof(newCF) ~= "CFrame" or type(newVelocity) ~= "number" then return nil end
+            cf, speed = newCF, newVelocity
+            elapsed = elapsed + dt
+        end
+        return cf.Position
+    end
+
+    local function buildSilentAimCFrame(originalCFrame, bulletData, gunType)
+        if not Config.MasterSilentAim then return originalCFrame, nil end
+        if typeof(originalCFrame) ~= "CFrame" then return originalCFrame, nil end
+        acquireGameTarget(false)
+        local targetPart = validateTarget(originalCFrame.Position)
+        local gunData = gunType and ArmamentData[gunType]
+        if targetPart and gunData and tonumber(gunData.DistLimit) then
+            if State.TargetDistance > tonumber(gunData.DistLimit) then return originalCFrame, nil end
+        end
+        if not targetPart then
+            State.CurrentTarget = nil
+            State.CurrentTargetModel = nil
+            acquireGameTarget(true)
+            targetPart = validateTarget(originalCFrame.Position)
+            if not targetPart then return originalCFrame, nil end
+        end
+        local targetPos = targetPart.Position
+        local predictedPos = targetPos
+        local targetDirection, targetSpeed = Vector3.zero, 0
+        if Config.PredictionEnabled then
+            targetDirection, targetSpeed = updateTargetMotion(State.CurrentTarget, targetPos)
+            local projectile = bulletData and bulletData.projectile
+            if projectile and tonumber(projectile.velocity) and tonumber(projectile.mass) then
+                local projectileSpeed = ((projectile.velocity * 3.6) + (tonumber(Plane.total_speed) or 0)) / 14.4
+                local interceptTime = solveInterceptTime(originalCFrame.Position, targetPos, targetDirection, targetSpeed, projectileSpeed, projectile.mass)
+                predictedPos = targetPos + (targetDirection * targetSpeed * interceptTime)
+                State.LastInterceptTime = interceptTime
+            end
+        end
+        local projectile = bulletData and bulletData.projectile
+        if not projectile then return originalCFrame, nil end
+        local baseVelocity = tonumber(projectile.velocity)
+        local projectileMass = tonumber(projectile.mass)
+        if not baseVelocity or not projectileMass then return originalCFrame, nil end
+        local projectileSpeed = ((baseVelocity * 3.6) + (tonumber(Plane.total_speed) or 0)) / 14.4
+        local flightTime = State.LastInterceptTime > 0 and State.LastInterceptTime or (predictedPos - originalCFrame.Position).Magnitude / math.max(projectileSpeed, 0.001)
+        local aimPoint = predictedPos
+        if Config.BallisticCompensation then
+            for _ = 1, 4 do
+                local delta = aimPoint - originalCFrame.Position
+                if delta.Magnitude <= 1e-4 then break end
+                local testCF = CFrame.lookAt(originalCFrame.Position, aimPoint, originalCFrame.UpVector)
+                local simPos = simulateProjectile(testCF, projectileSpeed, projectileMass, flightTime)
+                if not simPos then break end
+                local err = predictedPos - simPos
+                aimPoint = aimPoint + err
+                if err.Magnitude < 0.5 then break end
+            end
+        end
+        local finalDir = aimPoint - originalCFrame.Position
+        if finalDir.Magnitude <= 1e-4 then return originalCFrame, nil end
+        return CFrame.lookAt(originalCFrame.Position, aimPoint, originalCFrame.UpVector), aimPoint
+    end
+
+    Weapon.new_bullet = function(self, a2, a3, a4, a5, a6, a7, a8, a9)
+        local shotCFrame = a6
+        local isLocal = (a2 == LP.Name)
+        if State.Running and typeof(a6) == "CFrame" then
+            local gunName = tostring(a7 or ""):lower()
+            local isMissile = gunName:find("missile") or gunName:find("rocket") or
+                              gunName:find("bomb") or gunName:find("torpedo") or
+                              gunName:find("homing") or gunName:find("guided")
+            if Config.MasterTracer and (Config.TracerTarget == "Everyone" or isLocal) and not isMissile then
+                local endPos = a6.Position + (a6.LookVector * 3000)
+                local hasHit = false
+                if Config.MasterSilentAim and isLocal then
+                    local ok, redirected, aimPoint = pcall(buildSilentAimCFrame, a6, a5, a7)
+                    if ok and typeof(redirected) == "CFrame" then
+                        shotCFrame = redirected
+                        if aimPoint then endPos = aimPoint; hasHit = true end
+                    end
+                end
+                if #State.ActiveTracers >= (Config.MaxTracers or 25) then
+                    table.remove(State.ActiveTracers, 1)
+                end
+                table.insert(State.ActiveTracers, {
+                    from = shotCFrame.Position, to = endPos,
+                    created = os.clock(), isLocal = isLocal, hit = hasHit,
+                })
+            elseif Config.MasterSilentAim and isLocal then
+                local ok, redirected = pcall(buildSilentAimCFrame, a6, a5, a7)
+                if ok and typeof(redirected) == "CFrame" then shotCFrame = redirected end
+            end
+        end
+        return State.OriginalNewBullet(self, a2, a3, a4, a5, shotCFrame, a7, a8, a9)
+    end
+
+    acquireGameTarget(true)
+    print("[WOG] silent aim ready")
+end)
+
+-- PERF
+function DisableShadows()
+    pcall(function() State.SavedGlobalShadows = Lighting.GlobalShadows; Lighting.GlobalShadows = false end)
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            State.SavedParts[obj] = State.SavedParts[obj] or {}
+            if State.SavedParts[obj].CastShadow == nil then State.SavedParts[obj].CastShadow = obj.CastShadow end
+            obj.CastShadow = false
+        end
+    end
+end
+function RestoreShadows()
+    if State.SavedGlobalShadows ~= nil then Lighting.GlobalShadows = State.SavedGlobalShadows end
+    for p, d in pairs(State.SavedParts) do
+        if p and p.Parent and d.CastShadow ~= nil then p.CastShadow = d.CastShadow end
+    end
+end
+function DisableParticles()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Smoke")
+            or obj:IsA("Fire") or obj:IsA("Sparkles") or obj:IsA("Beam") then
+            State.ThrottledParticles[obj] = obj.Enabled
+            obj.Enabled = false
+        end
+    end
+end
+function RestoreParticles()
+    for o, v in pairs(State.ThrottledParticles) do
+        if o and o.Parent then o.Enabled = v end
+    end
+    table.clear(State.ThrottledParticles)
+end
+function ThrottleParticles()
+    local f = Config.PerfParticleThrottle
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("ParticleEmitter") then
+            if State.SavedParts[obj] == nil then State.SavedParts[obj] = obj.Rate end
+            if type(State.SavedParts[obj]) == "number" then
+                obj.Rate = math.max(0, State.SavedParts[obj] * f)
+            end
+        end
+    end
+end
+function RestoreThrottledParticles() end
+function DisableDecals()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Decal") or obj:IsA("Texture") then
+            State.HiddenParts[obj] = obj.Transparency
+            obj.Transparency = 1
+        end
+    end
+end
+function RestoreDecals()
+    for o, v in pairs(State.HiddenParts) do
+        if o and o.Parent then o.Transparency = v end
+    end
+    table.clear(State.HiddenParts)
+end
+function DisablePostFX()
+    pcall(function()
+        State.SavedQuality = settings().Rendering.QualityLevel
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level1
+    end)
+    pcall(function() State.SavedBrightness = Lighting.Brightness; Lighting.Brightness = 2 end)
+    for _, c in ipairs(Lighting:GetChildren()) do
+        if c:IsA("PostEffect") or c:IsA("Atmosphere") then
+            c.Enabled = false
+        end
+    end
+end
+function RestorePostFX()
+    if State.SavedQuality then pcall(function() settings().Rendering.QualityLevel = State.SavedQuality end) end
+    if State.SavedBrightness then Lighting.Brightness = State.SavedBrightness end
+    for _, c in ipairs(Lighting:GetChildren()) do
+        if c:IsA("PostEffect") or c:IsA("Atmosphere") then c.Enabled = true end
+    end
+end
+function FlattenMaterials()
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            State.SavedParts[obj] = State.SavedParts[obj] or {}
+            if State.SavedParts[obj].Material == nil then
+                State.SavedParts[obj].Material = obj.Material
+                State.SavedParts[obj].Reflectance = obj.Reflectance
+            end
+            pcall(function() obj.Material = Enum.Material.SmoothPlastic; obj.Reflectance = 0 end)
+        end
+    end
+end
+function RestoreMaterials()
+    for p, d in pairs(State.SavedParts) do
+        if p and p.Parent and type(d) == "table" then
+            if d.Material ~= nil then pcall(function() p.Material = d.Material end) end
+            if d.Reflectance ~= nil then pcall(function() p.Reflectance = d.Reflectance end) end
+        end
+    end
+end
+function HideFarParts()
+    local cam = Workspace.CurrentCamera
+    if not cam then return end
+    local camPos = cam.CFrame.Position
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            local isPlane = obj.Name == "Fuselage" or obj.Name == "LeftWing" or obj.Name == "RightWing"
+            if not isPlane then
+                local d = (obj.Position - camPos).Magnitude
+                if d > Config.PerfHideFarDistance and obj.Transparency < 1 then
+                    State.HiddenParts[obj] = obj.Transparency
+                    obj.Transparency = 1
+                end
+            end
+        end
+    end
+end
+function RestoreFarParts()
+    for o, v in pairs(State.HiddenParts) do
+        if o and o.Parent then o.Transparency = v end
+    end
+    table.clear(State.HiddenParts)
+end
+
+-- MASTER PERF WATCHER
+local lastMasterPerf = Config.MasterPerf
+task.spawn(function()
+    while State.Running do
+        task.wait(0.5)
+        if Config.MasterPerf ~= lastMasterPerf then
+            lastMasterPerf = Config.MasterPerf
+            if Config.MasterPerf then
+                if Config.PerfNoShadows then DisableShadows() end
+                if Config.PerfNoParticles then DisableParticles() end
+                if Config.PerfThrottleParticles then ThrottleParticles() end
+                if Config.PerfNoDecals then DisableDecals() end
+                if Config.PerfNoPostFX then DisablePostFX() end
+                if Config.PerfFlatMaterials then FlattenMaterials() end
+                if Config.PerfHideFar then HideFarParts() end
+            else
+                RestoreShadows()
+                RestoreParticles()
+                RestoreDecals()
+                RestorePostFX()
+                RestoreMaterials()
+                RestoreFarParts()
+            end
+        end
+    end
+end)
+
+-- RENDER LOOP
+trackConnection(RunService.RenderStepped:Connect(function()
+    if not State.Running then return end
+    if Config.MasterHitbox then ApplyRealHitbox() end
+    ResetDrawingPool()
+    local cam = Workspace.CurrentCamera
+    if not cam then return end
+    local now = os.clock()
+    local vpSize = cam.ViewportSize
+    local center = Vector2.new(vpSize.X / 2, vpSize.Y / 2)
+
+    updateDogfightThreats(cam)
+
+    -- tracers
+    if Config.MasterTracer then
+        local maxLife = Config.TracerLifetime or 0.75
+        local bt = Config.TracerThickness or 1.4
+        local style = Config.TracerStyle or "Neon"
+        local colA = Config.TracerColorA or Color3.fromRGB(0,255,230)
+        local colB = Config.TracerColorB or Color3.fromRGB(180,60,255)
+        local jitter = Config.TracerJitter or 6
+        local rbSpeed = Config.TracerRainbowSpeed or 1.5
+        local invMax = 1 / math.max(maxLife, 0.01)
+        local camPos = cam.CFrame.Position
+        local camLook = cam.CFrame.LookVector
+
+        local function seg(v1, v2, c, th, tp)
+            local l = GetPooledDrawing("Line")
+            l.Visible = true; l.From = v1; l.To = v2
+            l.Color = c; l.Thickness = th; l.Transparency = tp
+        end
+
+        for i = #State.ActiveTracers, 1, -1 do
+            local tr = State.ActiveTracers[i]
+            local age = now - tr.created
+            if age > maxLife then
+                table.remove(State.ActiveTracers, i)
+            else
+                local alpha = math.clamp(1 - age * invMax, 0, 1)
+                local prog = math.clamp(age * invMax, 0, 1)
+                local trCol = tr.isLocal and colA or Color3.fromRGB(255,120,40)
+                local pS, pE = tr.from, tr.to
+                local bTh = bt
+                if style == "Projectile" or style == "Comet" then
+                    pE = tr.from:Lerp(tr.to, math.min(prog * 1.5, 1))
+                    pS = tr.from:Lerp(tr.to, math.max((prog * 1.5) - 0.3, 0))
+                elseif style == "Pulse" then
+                    bTh = bt * (0.6 + 0.4 * math.sin(age * 18))
+                end
+                local c1, c2 = clipSegmentToCamera(pS, pE, cam)
+                if c1 and c2 then
+                    local s1 = cam:WorldToViewportPoint(c1)
+                    local s2 = cam:WorldToViewportPoint(c2)
+                    if s1.Z > 0 and s2.Z > 0 then
+                        local v1 = Vector2.new(s1.X, s1.Y)
+                        local v2 = Vector2.new(s2.X, s2.Y)
+                        if Config.TracerAfterglow then
+                            seg(v1, v2, trCol, bTh * 6, alpha * 0.06)
+                            seg(v1, v2, trCol, bTh * 3, alpha * 0.10)
+                        end
+                        if style == "Beam" then
+                            seg(v1, v2, trCol, bTh, alpha)
+                            seg(v1, v2, Color3.new(1,1,1), math.max(bTh*0.35,1), alpha*0.85)
+                        elseif style == "Neon" then
+                            seg(v1, v2, trCol, bTh*2.2, alpha*0.35)
+                            seg(v1, v2, trCol, bTh, alpha*0.95)
+                            seg(v1, v2, Color3.new(1,1,1), math.max(bTh*0.45,1), alpha)
+                        elseif style == "Glow Line" then
+                            seg(v1, v2, trCol, bTh*2.6, alpha*0.28)
+                            seg(v1, v2, trCol, bTh, alpha*0.75)
+                        elseif style == "Lightning" then
+                            local prevX, prevY = v1.X, v1.Y
+                            for s = 1, 5 do
+                                local t = s / 5
+                                local px = v1.X + (v2.X - v1.X) * t
+                                local py = v1.Y + (v2.Y - v1.Y) * t
+                                if s < 5 then
+                                    px = px + (math.random() - 0.5) * jitter * (1 - prog * 0.4)
+                                    py = py + (math.random() - 0.5) * jitter * (1 - prog * 0.4)
+                                end
+                                seg(Vector2.new(prevX, prevY), Vector2.new(px, py), trCol, bTh, alpha)
+                                prevX, prevY = px, py
+                            end
+                        elseif style == "Pulse" then
+                            seg(v1, v2, trCol, bTh*2, alpha*0.35)
+                            seg(v1, v2, Color3.new(1,1,1), bTh, alpha)
+                        elseif style == "Comet" then
+                            for s = 0, 4 do
+                                local t0, t1 = s/5, (s+1)/5
+                                seg(
+                                    Vector2.new(v1.X + (v2.X - v1.X) * t0, v1.Y + (v2.Y - v1.Y) * t0),
+                                    Vector2.new(v1.X + (v2.X - v1.X) * t1, v1.Y + (v2.Y - v1.Y) * t1),
+                                    trCol, bTh*(0.4+t1*1.1), 1-alpha*(t1*t1)
+                                )
+                            end
+                        elseif style == "Gradient" then
+                            for s = 0, 4 do
+                                local t0, t1 = s/5, (s+1)/5
+                                seg(
+                                    Vector2.new(v1.X + (v2.X - v1.X) * t0, v1.Y + (v2.Y - v1.Y) * t0),
+                                    Vector2.new(v1.X + (v2.X - v1.X) * t1, v1.Y + (v2.Y - v1.Y) * t1),
+                                    trCol:Lerp(colB, t1), bTh, 1-alpha
+                                )
+                            end
+                        elseif style == "Rainbow" then
+                            for s = 0, 5 do
+                                local t0, t1 = s/6, (s+1)/6
+                                seg(
+                                    Vector2.new(v1.X + (v2.X - v1.X) * t0, v1.Y + (v2.Y - v1.Y) * t0),
+                                    Vector2.new(v1.X + (v2.X - v1.X) * t1, v1.Y + (v2.Y - v1.Y) * t1),
+                                    hsvToRgb((t0 + now*rbSpeed)%1, 0.9, 1), bTh, 1-alpha
+                                )
+                            end
+                        elseif style == "Projectile" then
+                            seg(v1, v2, trCol, bTh, alpha*0.85)
+                            local head = GetPooledDrawing("Circle")
+                            head.Visible = true; head.Position = v2
+                            head.Radius = math.max(bTh*1.4, 2.8)
+                            head.Color = Color3.new(1,1,1); head.Filled = true; head.Thickness = 1
+                            head.Transparency = alpha
+                        end
+                        if Config.TracerTipSpark and prog < 0.7 then
+                            local sa = math.clamp(1 - prog * 1.4, 0, 1) * alpha
+                            if sa > 0.05 then
+                                local spark = GetPooledDrawing("Circle")
+                                spark.Visible = true; spark.Position = v2
+                                spark.Radius = math.max(bTh * 0.9, 1.5)
+                                spark.Color = Color3.new(1,1,1); spark.Filled = true; spark.Thickness = 1
+                                spark.Transparency = 1 - sa
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if Config.DrawFOV and Config.MasterSilentAim then
+        local f = GetPooledDrawing("Circle")
+        f.Visible = true
+        f.Radius = Config.FOVRadius
+        f.Position = center
+        f.Color = Color3.fromRGB(200,200,210)
+        f.Thickness = 1; f.Filled = false
+    end
+
+    DrawESP(cam, vpSize, center)
+    DrawRadar(cam, vpSize)
+    DrawDogfightWarning(cam, vpSize, center)
+end))
+
+-- KEYBIND
+trackConnection(UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        if State.Minimized then
+            MinimizeWindow(false)
+        else
+            SetMenuOpen(not State.MenuOpen)
+        end
+    end
+end))
+
+-- UNLOAD
+function UnloadScript()
+    State.Running = false
+    if State.WeaponModule and State.OriginalNewBullet then
+        pcall(function() State.WeaponModule.new_bullet = State.OriginalNewBullet end)
+    end
+    for _, c in ipairs(State.Connections) do
+        pcall(function() c:Disconnect() end)
+    end
+    table.clear(State.Connections)
+    pcall(function() RestoreShadows() end)
+    pcall(function() RestoreParticles() end)
+    pcall(function() RestoreDecals() end)
+    pcall(function() RestorePostFX() end)
+    pcall(function() RestoreMaterials() end)
+    pcall(function() RestoreFarParts() end)
+    for p, orig in pairs(State.OriginalSizes) do
+        if p and p.Parent then p.Size = orig end
+    end
+    table.clear(State.OriginalSizes)
+    ResetDrawingPool()
+    pcall(function() ScreenGui:Destroy() end)
+end
+_G.__WOG_UNLOAD = UnloadScript
+
+-- BOOT
+task.spawn(function()
+    task.wait(0.3)
+    SendNotification(T("wog"), "v8.7 · RightShift to toggle", 3, "success")
+end)
+
+RepaintWatermark()
+print("[WOG] v8.7 loaded · ready")
